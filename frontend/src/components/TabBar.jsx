@@ -9,6 +9,15 @@ const icons = {
   CTRL: SlidersHorizontal,
 };
 
+const labels = {
+  HOME: 'ホーム',
+  MAP: '地図',
+  SALES: '売上',
+  STOCK: '在庫',
+  KPI: '実績',
+  CTRL: '制御',
+};
+
 export default function TabBar({ tabs, activeTab, onChange }) {
   return (
     <nav className="tabbar">
@@ -17,7 +26,7 @@ export default function TabBar({ tabs, activeTab, onChange }) {
         return (
           <button className={tab === activeTab ? 'active' : ''} key={tab} type="button" onClick={() => onChange(tab)}>
             <Icon size={18} />
-            <span>{tab}</span>
+            <span>{labels[tab]}</span>
           </button>
         );
       })}

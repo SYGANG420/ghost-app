@@ -86,7 +86,7 @@ export default function CalculatorDecoy({ onUnlock }) {
       <section className="calculator">
         <div className="calc-status">
           <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-          <span>WiFi BAT</span>
+          <span>通信 電池</span>
         </div>
         <div className="calc-display">
           <span>{trail}</span>
