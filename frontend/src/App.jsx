@@ -41,7 +41,14 @@ export default function App() {
 
   const pages = {
     HOME: <HomePage socketState={socket.state} />,
-    MAP: <MapPage socketState={socket.state} />,
+    MAP: (
+      <MapPage
+        socketState={socket.state}
+        socketMessage={socket.lastMessage}
+        sendSocketMessage={socket.sendJson}
+        deviceId={auth.deviceId}
+      />
+    ),
     SALES: <SalesPage />,
     STOCK: <StockPage />,
     KPI: <KpiPage />,
