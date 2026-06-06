@@ -16,3 +16,17 @@ export const position = {
   speed: 0,
   updatedAt: 'LIVE MOCK',
 };
+
+export const investments = [
+  { id: 1, investor: 'A', date: '2026-05-04', amount: 700000, memo: 'Initial pool' },
+  { id: 2, investor: 'B', date: '2026-05-11', amount: 500000, memo: 'Device and stock' },
+  { id: 3, investor: 'A', date: '2026-06-02', amount: 180000, memo: 'Restock reserve' },
+];
+
+export const monthlyReport = {
+  lastMonthSales: 2480000,
+  lastMonthGross: 940000,
+  takeHomeA: 470000,
+  takeHomeB: 470000,
+  snapshotDate: '2026-06-01',
+};

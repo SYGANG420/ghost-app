@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { requestDeviceToken } from '../api/client.js';
+import { requestDeviceToken } from '../api/auth.js';
 
 const DEVICE_KEY = 'ghost_control_device_id';
 const TOKEN_KEY = 'ghost_control_jwt';

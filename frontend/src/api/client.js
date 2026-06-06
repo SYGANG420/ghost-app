@@ -1,14 +1,25 @@
-const API_BASE = '/api';
+export const BASE_URL = 'https://89.127.235.242/api';
 
-export async function requestDeviceToken(deviceId) {
-  const response = await fetch(`${API_BASE}/auth/device`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ device_id: deviceId }),
+export async function apiFetch(path, options = {}) {
+  const token = options.token || localStorage.getItem('ghost_control_jwt');
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options.headers,
+  };
+
+  const response = await fetch(`${BASE_URL}${path}`, {
+    ...options,
+    headers,
+    body: options.body && typeof options.body !== 'string' ? JSON.stringify(options.body) : options.body,
   });
 
   if (!response.ok) {
-    throw new Error(`Token request failed: ${response.status}`);
+    throw new Error(`API request failed: ${response.status}`);
+  }
+
+  if (response.status === 204) {
+    return null;
   }
 
   return response.json();
