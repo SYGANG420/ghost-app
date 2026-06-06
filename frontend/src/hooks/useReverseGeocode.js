@@ -31,7 +31,7 @@ export function useReverseGeocode(position) {
     reverseGeocode(lat, lon)
       .then((payload) => {
         if (cancelled) return;
-        const nextAddress = payload.display_name || '住所不明';
+        const nextAddress = payload?.results?.lv01Nm || '住所不明';
         cacheRef.current = { key: cacheKey, address: nextAddress, timestamp: Date.now() };
         setAddress(nextAddress);
         setStatus('ready');

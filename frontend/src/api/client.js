@@ -29,12 +29,11 @@ export async function apiFetch(path, options = {}) {
 
 export async function reverseGeocode(lat, lon) {
   const params = new URLSearchParams({
-    format: 'jsonv2',
     lat: String(lat),
     lon: String(lon),
   });
 
-  const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`);
+  const response = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?${params.toString()}`);
 
   if (!response.ok) {
     throw new Error(`Reverse geocode failed: ${response.status}`);
