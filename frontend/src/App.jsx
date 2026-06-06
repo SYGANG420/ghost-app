@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import CalculatorDecoy from './components/CalculatorDecoy.jsx';
 import DeviceSetup from './components/DeviceSetup.jsx';
 import Header from './components/Header.jsx';
@@ -15,12 +15,23 @@ import SalesPage from './pages/SalesPage.jsx';
 import StockPage from './pages/StockPage.jsx';
 
 const tabs = ['HOME', 'MAP', 'SALES', 'STOCK', 'KPI', 'CTRL'];
+const PRODUCTS_KEY = 'ghost_control_products';
+const SALES_KEY = 'ghost_control_sales_records';
+
+function loadStored(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export default function App() {
   const [unlocked, setUnlocked] = useState(false);
   const [activeTab, setActiveTab] = useState('HOME');
-  const [products, setProducts] = useState(seedProducts);
-  const [salesRecords, setSalesRecords] = useState(seedSales);
+  const [products, setProducts] = useState(() => loadStored(PRODUCTS_KEY, seedProducts));
+  const [salesRecords, setSalesRecords] = useState(() => loadStored(SALES_KEY, seedSales));
   const auth = useDeviceAuth();
   const socket = useGhostSocket(auth.deviceId, auth.token);
   const monthlyProfit = salesRecords.reduce((sum, item) => sum + item.grossProfit, 0);
@@ -31,6 +42,14 @@ export default function App() {
     socketState: socket.state,
     deviceId: auth.deviceId,
   });
+
+  useEffect(() => {
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+  }, [products]);
+
+  useEffect(() => {
+    localStorage.setItem(SALES_KEY, JSON.stringify(salesRecords));
+  }, [salesRecords]);
 
   if (!unlocked) {
     return <CalculatorDecoy onUnlock={() => setUnlocked(true)} />;

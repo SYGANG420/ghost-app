@@ -9,21 +9,24 @@ function today() {
 export default function SalesPage({ deviceId, products, setProducts, salesRecords, setSalesRecords }) {
   const firstProduct = products[0];
   const [draft, setDraft] = useState({
+    date: today(),
     productId: firstProduct?.id || '',
     quantity: 1,
-    staff: deviceId === 'device_b' ? 'B' : 'A',
+    staff: '',
     delivery: false,
     deliveryFee: 0,
-    purchasePrice: firstProduct?.purchasePrice || 0,
+    salePrice: '',
   });
 
   const selectedProduct = products.find((item) => item.id === draft.productId) || firstProduct;
   const quantity = Math.max(Number(draft.quantity) || 1, 1);
-  const purchasePrice = Number(draft.purchasePrice) || selectedProduct?.purchasePrice || 0;
+  const purchasePrice = selectedProduct?.purchasePrice || 0;
+  const salePrice = Number(draft.salePrice) || 0;
   const deliveryFee = draft.delivery ? Number(draft.deliveryFee) || 0 : 0;
-  const revenue = selectedProduct ? selectedProduct.retailPrice * quantity : 0;
+  const revenue = selectedProduct ? salePrice * quantity : 0;
   const grossProfit = selectedProduct ? revenue - purchasePrice * quantity - deliveryFee : 0;
   const insufficient = selectedProduct ? quantity > selectedProduct.quantity : true;
+  const formReady = Boolean(draft.date && draft.staff && selectedProduct && salePrice > 0 && !insufficient);
   const monthlyTotal = salesRecords.reduce((sum, item) => sum + item.revenue, 0);
 
   const updateQuantity = (next) => {
@@ -32,22 +35,22 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
 
   const selectProduct = (productId) => {
     const product = products.find((item) => item.id === productId);
-    setDraft((current) => ({ ...current, productId, purchasePrice: product?.purchasePrice || 0 }));
+    setDraft((current) => ({ ...current, productId }));
   };
 
   const registerSale = (event) => {
     event.preventDefault();
-    if (!selectedProduct || insufficient) return;
+    if (!formReady) return;
 
     const sale = {
       id: Date.now(),
-      date: today(),
+      date: draft.date,
       deviceId,
       staff: draft.staff,
       productId: selectedProduct.id,
       productName: selectedProduct.name,
       quantity,
-      unitPrice: selectedProduct.retailPrice,
+      unitPrice: salePrice,
       purchasePrice,
       delivery: draft.delivery,
       deliveryFee,
@@ -70,10 +73,18 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
           <span>&#x4eca;&#x6708;&#x306e;&#x4ef6;&#x6570;</span>
           <strong>{salesRecords.length}&#x4ef6;</strong>
         </div>
+        <div className="metric-card">
+          <span>&#x767b;&#x9332;&#x65e5;</span>
+          <strong>{draft.date}</strong>
+        </div>
       </div>
 
       <form className="wide-panel cyber-card compact-form" onSubmit={registerSale}>
         <h2>&#x58f2;&#x4e0a;&#x767b;&#x9332;</h2>
+        <label>
+          &#x65e5;&#x4ed8;
+          <input type="date" value={draft.date} onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))} />
+        </label>
         <label>
           &#x5546;&#x54c1;&#x9078;&#x629e;
           <select value={draft.productId} onChange={(event) => selectProduct(event.target.value)}>
@@ -97,15 +108,21 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
         <label>
           &#x62c5;&#x5f53;&#x8005;
           <select value={draft.staff} onChange={(event) => setDraft((current) => ({ ...current, staff: event.target.value }))}>
+            <option value="">&#x9078;&#x629e;&#x3057;&#x3066;&#x304f;&#x3060;&#x3055;&#x3044;</option>
             <option value="A">A</option>
             <option value="B">B</option>
           </select>
         </label>
 
         <label>
-          &#x4ed5;&#x5165;&#x308c;&#x4fa1;&#x683c;
-          <input type="number" value={draft.purchasePrice} onChange={(event) => setDraft((current) => ({ ...current, purchasePrice: Number(event.target.value) }))} />
+          &#x8ca9;&#x58f2;&#x4fa1;&#x683c;
+          <input placeholder="0" type="number" value={draft.salePrice} onChange={(event) => setDraft((current) => ({ ...current, salePrice: event.target.value }))} />
         </label>
+
+        <div className="readonly-row">
+          <span>&#x5546;&#x54c1;&#x30de;&#x30b9;&#x30bf;&#x4ed5;&#x5165;&#x308c;&#x4fa1;&#x683c;</span>
+          <strong>{yen(purchasePrice)}</strong>
+        </div>
 
         <label className="check-row">
           <input type="checkbox" checked={draft.delivery} onChange={(event) => setDraft((current) => ({ ...current, delivery: event.target.checked }))} />
@@ -129,7 +146,7 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
           <span>&#x7c97;&#x5229; {yen(grossProfit)}</span>
         </div>
 
-        <button type="submit" disabled={insufficient}>
+        <button type="submit" disabled={!formReady}>
           <Save size={16} /> &#x767b;&#x9332;
         </button>
       </form>

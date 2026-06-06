@@ -12,11 +12,9 @@ export function useDeviceAuth() {
 
   const hasDevice = Boolean(deviceId);
 
-  const selectDevice = useCallback(async (nextDeviceId) => {
+  const issueToken = useCallback(async (nextDeviceId) => {
     setStatus('loading');
     setError('');
-    localStorage.setItem(DEVICE_KEY, nextDeviceId);
-    setDeviceId(nextDeviceId);
 
     try {
       const payload = await requestDeviceToken(nextDeviceId);
@@ -30,16 +28,25 @@ export function useDeviceAuth() {
       setToken(nextToken);
       setStatus('ready');
     } catch (authError) {
-      const fallbackToken = `dev.${btoa(nextDeviceId)}.${Date.now()}`;
-      localStorage.setItem(TOKEN_KEY, fallbackToken);
-      setToken(fallbackToken);
-      setStatus('mock');
       setError(authError.message);
+      setStatus('error');
     }
   }, []);
 
+  const selectDevice = useCallback(async (nextDeviceId) => {
+    localStorage.setItem(DEVICE_KEY, nextDeviceId);
+    setDeviceId(nextDeviceId);
+    await issueToken(nextDeviceId);
+  }, [issueToken]);
+
   useEffect(() => {
-    if (deviceId && token) {
+    if (deviceId && (!token || token.startsWith('dev.'))) {
+      issueToken(deviceId);
+    }
+  }, [deviceId, issueToken, token]);
+
+  useEffect(() => {
+    if (deviceId && token && !token.startsWith('dev.')) {
       setStatus('ready');
     }
   }, [deviceId, token]);
