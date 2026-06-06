@@ -1,4 +1,6 @@
-export const BASE_URL = 'https://89.127.235.242/api';
+export const APP_ORIGIN = 'https://ghost-control.duckdns.org';
+export const BASE_URL = `${APP_ORIGIN}/api`;
+export const WS_BASE_URL = 'wss://ghost-control.duckdns.org/ws';
 
 export async function apiFetch(path, options = {}) {
   const token = options.token || localStorage.getItem('ghost_control_jwt');

@@ -5,9 +5,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api': 'http://89.127.235.242',
+      '/api': 'https://ghost-control.duckdns.org',
       '/ws': {
-        target: 'ws://89.127.235.242',
+        target: 'wss://ghost-control.duckdns.org',
         ws: true,
       },
     },
