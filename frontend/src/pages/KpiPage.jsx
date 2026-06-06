@@ -34,7 +34,7 @@ export default function KpiPage() {
   };
 
   return (
-    <section className="form-grid">
+    <section className="page-stack">
       <div className="subtabs wide-panel">
         {['PERFORMANCE', 'INVESTMENT'].map((tab) => (
           <button className={subTab === tab ? 'active' : ''} key={tab} type="button" onClick={() => setSubTab(tab)}>

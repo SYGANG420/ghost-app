@@ -5,9 +5,15 @@ export default function Header({ activeTab, deviceId, socketState }) {
 
   return (
     <header className="app-header">
-      <div>
-        <p className="eyebrow">GHOST CONTROL</p>
-        <h1>{activeTab}</h1>
+      <div className="brand-lockup">
+        <div className="brand-mark">GC</div>
+        <div>
+          <div className="brand-title">GHOST CONTROL</div>
+          <div className="brand-subline">
+            <span className="signal-dot" />
+            <span>{activeTab} / SECURED</span>
+          </div>
+        </div>
       </div>
       <div className="header-status">
         <span className="status-chip">
@@ -20,7 +26,7 @@ export default function Header({ activeTab, deviceId, socketState }) {
         </span>
         <span className="status-chip">
           <RadioTower size={16} />
-          API /api
+          API
         </span>
       </div>
     </header>
