@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Lock, ServerCrash, ShieldAlert, Trash2 } from 'lucide-react';
+import WebSocketDiagnostics from '../components/WebSocketDiagnostics.jsx';
 import { requestRemoteWipe, requestVpsWipe } from '../api/wipe.js';
 
-export default function CtrlPage({ onLock, deviceId }) {
+export default function CtrlPage({ onLock, deviceId, socketState, socketDiagnostics, authStatus, authError }) {
   const [deadmanEnabled, setDeadmanEnabled] = useState(false);
   const [deadmanHours, setDeadmanHours] = useState(72);
   const [lastAction, setLastAction] = useState('\u5f85\u6a5f\u4e2d');
@@ -49,6 +50,13 @@ export default function CtrlPage({ onLock, deviceId }) {
         <strong>{isAdmin ? 'ADMIN\u6a29\u9650' : 'USER\u6a29\u9650'}</strong>
         <span>{lastAction}</span>
       </div>
+
+      <WebSocketDiagnostics
+        authError={authError}
+        authStatus={authStatus}
+        diagnostics={socketDiagnostics}
+        socketState={socketState}
+      />
 
       <div className="ctrl-grid">
         {wipeActions.map((action) => {
