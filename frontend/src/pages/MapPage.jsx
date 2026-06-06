@@ -45,6 +45,7 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
   const markerRefs = useRef({});
   const [selected, setSelected] = useState(deviceShortId(deviceId));
   const [gpsPosition, setGpsPosition] = useState(null);
+  const [gpsHistory, setGpsHistory] = useState([]);
   const [peerPosition, setPeerPosition] = useState(null);
   const [geoStatus, setGeoStatus] = useState('idle');
   const [geoError, setGeoError] = useState('');
@@ -73,6 +74,7 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
         };
         console.log('[GHOST MAP] GPS position received', position);
         setGpsPosition(position);
+        setGpsHistory((current) => [position, ...current].slice(0, 5));
         setGeoStatus('ready');
         setGeoError('');
         if (deviceId && sendSocketMessage) {
@@ -146,6 +148,7 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
 
   const selectedDevice = devices.find((device) => device.id === selected) || devices[0];
   const selectedPosition = selectedDevice.position;
+  const accuracyPercent = gpsPosition?.accuracy ? Math.max(8, Math.min(100, 100 - gpsPosition.accuracy)) : 8;
   const copyCoordinates = () => selectedPosition && navigator.clipboard?.writeText(formatCoords(selectedPosition));
   const openNavigation = () => selectedPosition && window.open(`https://maps.google.com/?q=${selectedPosition.lat},${selectedPosition.lon}`, '_blank');
   const centerCurrentLocation = () => gpsPosition && mapRef.current?.setView([gpsPosition.lat, gpsPosition.lon], 18);
@@ -173,6 +176,14 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
         <div className="map-distance">GPS&#x7cbe;&#x5ea6; {gpsPosition?.accuracy ? `${Math.round(gpsPosition.accuracy)}m` : '\u6e2c\u5b9a\u4e2d'}</div>
         <div className="map-provider">CartoDB Dark Matter</div>
       </div>
+      <div className="wide-panel cyber-card">
+        <div className="panel-title-row">
+          <h2>GPS&#x7cbe;&#x5ea6;</h2>
+          <span className="pill online">{gpsPosition?.accuracy ? `${Math.round(gpsPosition.accuracy)}m` : '\u6e2c\u5b9a\u4e2d'}</span>
+        </div>
+        <div className="bar-track"><span style={{ width: `${accuracyPercent}%` }} /></div>
+        <p className="muted">&#x4f4f;&#x6240;API: &#x56fd;&#x571f;&#x5730;&#x7406;&#x9662; / 30&#x79d2;&#x30ad;&#x30e3;&#x30c3;&#x30b7;&#x30e5; / &#x8868;&#x793a;&#x306f;&#x4ed8;&#x8fd1;&#x8868;&#x8a18;</p>
+      </div>
       <aside className="map-panel cyber-card">
         <div className="panel-title-row">
           <h2>{selectedDevice.label}</h2>
@@ -194,6 +205,17 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
           <em>{statusJa(device.status)}</em>
         </button>
       ))}
+      <div className="wide-panel cyber-card">
+        <h2>GPS&#x5c65;&#x6b74;</h2>
+        {gpsHistory.length === 0 ? (
+          <p className="muted">&#x5c65;&#x6b74;&#x306a;&#x3057;</p>
+        ) : gpsHistory.map((item) => (
+          <div className="feed-row" key={`${item.updatedAt}-${item.lat}`}>
+            <span>{new Date(item.updatedAt).toLocaleTimeString('ja-JP')} / {formatCoords(item)}</span>
+            <strong>{item.accuracy ? `${Math.round(item.accuracy)}m` : '-'}</strong>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

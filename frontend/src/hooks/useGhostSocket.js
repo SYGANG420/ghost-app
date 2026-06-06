@@ -8,6 +8,8 @@ const READY_STATE_LABELS = {
   3: 'CLOSED',
 };
 
+const RETRY_DELAY_MS = 10_000;
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -27,15 +29,29 @@ function initialDiagnostics(token) {
     lastCloseReason: '',
     lastSendFailureAt: '',
     sendFailures: 0,
+    retryDelayMs: RETRY_DELAY_MS,
+    nextRetryAt: '',
+    reconnects: 0,
   };
 }
 
 export function useGhostSocket(deviceId, token) {
   const socketRef = useRef(null);
   const openedRef = useRef(false);
+  const retryTimerRef = useRef(null);
+  const [reconnectNonce, setReconnectNonce] = useState(0);
   const [state, setState] = useState('offline');
   const [lastMessage, setLastMessage] = useState(null);
   const [diagnostics, setDiagnostics] = useState(() => initialDiagnostics(token));
+
+  const reconnect = useCallback(() => {
+    if (retryTimerRef.current) {
+      window.clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    setDiagnostics((current) => ({ ...current, nextRetryAt: '', reconnects: current.reconnects + 1 }));
+    setReconnectNonce((current) => current + 1);
+  }, []);
 
   useEffect(() => {
     if (!deviceId || !token) {
@@ -48,6 +64,16 @@ export function useGhostSocket(deviceId, token) {
     const socket = new WebSocket(url);
     socketRef.current = socket;
     openedRef.current = false;
+
+    const scheduleReconnect = () => {
+      if (retryTimerRef.current || !deviceId || !token) return;
+      const nextRetryAt = new Date(Date.now() + RETRY_DELAY_MS).toISOString();
+      setDiagnostics((current) => ({ ...current, retryDelayMs: RETRY_DELAY_MS, nextRetryAt }));
+      retryTimerRef.current = window.setTimeout(() => {
+        retryTimerRef.current = null;
+        setReconnectNonce((current) => current + 1);
+      }, RETRY_DELAY_MS);
+    };
 
     setState('connecting');
     setDiagnostics({
@@ -70,6 +96,7 @@ export function useGhostSocket(deviceId, token) {
         lastErrorAt: '',
         lastCloseCode: '',
         lastCloseReason: '',
+        nextRetryAt: '',
       }));
     });
     socket.addEventListener('message', (event) => {
@@ -98,6 +125,7 @@ export function useGhostSocket(deviceId, token) {
         lastCloseCode: event.code || '',
         lastCloseReason: event.reason || '',
       }));
+      scheduleReconnect();
     });
     socket.addEventListener('error', () => {
       if (socketRef.current !== socket) return;
@@ -109,15 +137,20 @@ export function useGhostSocket(deviceId, token) {
       }));
       if (!openedRef.current) {
         setState('error');
+        scheduleReconnect();
       }
     });
 
     return () => {
+      if (retryTimerRef.current) {
+        window.clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
       if (socketRef.current !== socket) return;
       socketRef.current = null;
       socket.close();
     };
-  }, [deviceId, token]);
+  }, [deviceId, reconnectNonce, token]);
 
   const sendJson = useCallback((payload) => {
     const socket = socketRef.current;
@@ -146,7 +179,7 @@ export function useGhostSocket(deviceId, token) {
   }, []);
 
   return useMemo(
-    () => ({ state, lastMessage, sendJson, diagnostics }),
-    [state, lastMessage, sendJson, diagnostics]
+    () => ({ state, lastMessage, sendJson, diagnostics, reconnect }),
+    [state, lastMessage, sendJson, diagnostics, reconnect]
   );
 }

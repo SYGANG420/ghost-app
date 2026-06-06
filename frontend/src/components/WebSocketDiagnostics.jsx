@@ -15,6 +15,11 @@ const TEXT = {
   error: '\u6700\u5f8c\u306eerror',
   closeReason: 'close\u7406\u7531',
   sendFailures: '\u9001\u4fe1\u5931\u6557',
+  nextRetry: '\u6b21\u56de\u518d\u63a5\u7d9a',
+  retryDelay: '\u518d\u63a5\u7d9a\u9593\u9694',
+  reconnects: '\u624b\u52d5\u518d\u63a5\u7d9a',
+  refreshJwt: 'JWT\u518d\u53d6\u5f97',
+  reconnectNow: 'WS\u518d\u63a5\u7d9a',
   none: '-',
   jwtReady: '\u53d6\u5f97\u6e08\u307f',
   devToken: '\u4eee\u30c8\u30fc\u30af\u30f3',
@@ -43,7 +48,7 @@ function DiagnosticRow({ label, value }) {
   );
 }
 
-export default function WebSocketDiagnostics({ authStatus, authError, socketState, diagnostics = {} }) {
+export default function WebSocketDiagnostics({ authStatus, authError, socketState, diagnostics = {}, onRefreshToken, onReconnect }) {
   const closeText = diagnostics.lastCloseCode
     ? `${diagnostics.lastCloseCode} ${diagnostics.lastCloseReason || TEXT.none}`
     : TEXT.none;
@@ -70,6 +75,13 @@ export default function WebSocketDiagnostics({ authStatus, authError, socketStat
         <DiagnosticRow label={TEXT.error} value={formatTime(diagnostics.lastErrorAt)} />
         <DiagnosticRow label={TEXT.closeReason} value={closeText} />
         <DiagnosticRow label={TEXT.sendFailures} value={`${diagnostics.sendFailures || 0}`} />
+        <DiagnosticRow label={TEXT.retryDelay} value={`${Math.round((diagnostics.retryDelayMs || 0) / 1000)}\u79d2`} />
+        <DiagnosticRow label={TEXT.nextRetry} value={formatTime(diagnostics.nextRetryAt)} />
+        <DiagnosticRow label={TEXT.reconnects} value={`${diagnostics.reconnects || 0}`} />
+      </div>
+      <div className="button-row">
+        <button type="button" onClick={onRefreshToken}>{TEXT.refreshJwt}</button>
+        <button type="button" onClick={onReconnect}>{TEXT.reconnectNow}</button>
       </div>
     </div>
   );
