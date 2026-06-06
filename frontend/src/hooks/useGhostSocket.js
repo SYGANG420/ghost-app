@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { WS_BASE_URL } from '../api/client.js';
 
 export function useGhostSocket(deviceId, token) {
   const [state, setState] = useState('offline');
@@ -10,9 +11,8 @@ export function useGhostSocket(deviceId, token) {
       return undefined;
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const socket = new WebSocket(
-      `${protocol}://${window.location.host}/ws/${encodeURIComponent(deviceId)}/${encodeURIComponent(token)}`
+      `${WS_BASE_URL}/${encodeURIComponent(deviceId)}/${encodeURIComponent(token)}`
     );
 
     setState('connecting');
