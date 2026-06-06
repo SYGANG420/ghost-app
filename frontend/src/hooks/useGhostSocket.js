@@ -3,6 +3,7 @@ import { WS_BASE_URL } from '../api/client.js';
 
 export function useGhostSocket(deviceId, token) {
   const socketRef = useRef(null);
+  const openedRef = useRef(false);
   const [state, setState] = useState('offline');
   const [lastMessage, setLastMessage] = useState(null);
 
@@ -16,10 +17,14 @@ export function useGhostSocket(deviceId, token) {
       `${WS_BASE_URL}/${encodeURIComponent(deviceId)}/${encodeURIComponent(token)}`
     );
     socketRef.current = socket;
+    openedRef.current = false;
 
     setState('connecting');
 
-    socket.addEventListener('open', () => setState('online'));
+    socket.addEventListener('open', () => {
+      openedRef.current = true;
+      setState('online');
+    });
     socket.addEventListener('message', (event) => {
       try {
         setLastMessage(JSON.parse(event.data));
@@ -27,8 +32,15 @@ export function useGhostSocket(deviceId, token) {
         setLastMessage({ raw: event.data });
       }
     });
-    socket.addEventListener('close', () => setState('offline'));
-    socket.addEventListener('error', () => setState('error'));
+    socket.addEventListener('close', () => {
+      openedRef.current = false;
+      setState('offline');
+    });
+    socket.addEventListener('error', () => {
+      if (!openedRef.current) {
+        setState('error');
+      }
+    });
 
     return () => {
       socketRef.current = null;

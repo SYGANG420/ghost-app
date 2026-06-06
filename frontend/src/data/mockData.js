@@ -1,13 +1,55 @@
-export const sales = [
-  { id: 1, label: 'UNIT-01', price: 128000, cost: 52000, expense: 9000 },
-  { id: 2, label: 'UNIT-02', price: 96000, cost: 43000, expense: 7000 },
-  { id: 3, label: 'UNIT-03', price: 146000, cost: 63000, expense: 12000 },
+export const products = [
+  { id: 'product_a', code: 'A', name: 'A', quantity: 18, threshold: 5, purchasePrice: 52000, retailPrice: 128000 },
+  { id: 'product_b', code: 'B', name: 'B', quantity: 11, threshold: 4, purchasePrice: 43000, retailPrice: 96000 },
+  { id: 'product_c', code: 'C', name: 'C', quantity: 7, threshold: 3, purchasePrice: 63000, retailPrice: 146000 },
 ];
 
-export const stock = [
-  { id: 1, name: 'CBD 1ml', quantity: 8, threshold: 10, purchasePrice: 2100 },
-  { id: 2, name: 'Battery', quantity: 26, threshold: 12, purchasePrice: 840 },
-  { id: 3, name: 'Case', quantity: 4, threshold: 8, purchasePrice: 320 },
+export const sales = [
+  {
+    id: 1,
+    date: '2026-06-02',
+    deviceId: 'device_a',
+    staff: 'A',
+    productId: 'product_a',
+    productName: 'A',
+    quantity: 1,
+    unitPrice: 128000,
+    purchasePrice: 52000,
+    delivery: true,
+    deliveryFee: 6000,
+    revenue: 128000,
+    grossProfit: 70000,
+  },
+  {
+    id: 2,
+    date: '2026-06-04',
+    deviceId: 'device_b',
+    staff: 'B',
+    productId: 'product_b',
+    productName: 'B',
+    quantity: 2,
+    unitPrice: 96000,
+    purchasePrice: 43000,
+    delivery: false,
+    deliveryFee: 0,
+    revenue: 192000,
+    grossProfit: 106000,
+  },
+  {
+    id: 3,
+    date: '2026-06-06',
+    deviceId: 'device_a',
+    staff: 'A',
+    productId: 'product_c',
+    productName: 'C',
+    quantity: 1,
+    unitPrice: 146000,
+    purchasePrice: 63000,
+    delivery: true,
+    deliveryFee: 8000,
+    revenue: 146000,
+    grossProfit: 75000,
+  },
 ];
 
 export const investments = [
@@ -15,11 +57,3 @@ export const investments = [
   { id: 2, investor: 'B', date: '2026-05-11', amount: 500000, memo: 'Device and stock' },
   { id: 3, investor: 'A', date: '2026-06-02', amount: 180000, memo: 'Restock reserve' },
 ];
-
-export const monthlyReport = {
-  lastMonthSales: 2480000,
-  lastMonthGross: 940000,
-  takeHomeA: 470000,
-  takeHomeB: 470000,
-  snapshotDate: '2026-06-01',
-};

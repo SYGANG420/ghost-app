@@ -1,13 +1,13 @@
-import { RadioTower, Shield, Wifi, WifiOff } from 'lucide-react';
+import { Shield, Wifi, WifiOff } from 'lucide-react';
 import { statusJa } from '../utils/format.js';
 
 const labels = {
-  HOME: 'ホーム',
-  MAP: '地図',
-  SALES: '売上',
-  STOCK: '在庫',
-  KPI: '実績',
-  CTRL: '制御',
+  HOME: 'HOME',
+  MAP: 'MAP',
+  SALES: 'SALES',
+  STOCK: 'STOCK',
+  KPI: 'KPI',
+  CTRL: 'CTRL',
 };
 
 export default function Header({ activeTab, deviceId, socketState }) {
@@ -18,7 +18,7 @@ export default function Header({ activeTab, deviceId, socketState }) {
       <div className="brand-lockup">
         <div className="brand-mark">GC</div>
         <div>
-          <div className="brand-title">ゴーストコントロール</div>
+          <div className="brand-title">GHOST CONTROL</div>
           <div className="brand-subline">
             <span className="signal-dot" />
             <span>{labels[activeTab]} / 保護中</span>
@@ -33,10 +33,6 @@ export default function Header({ activeTab, deviceId, socketState }) {
         <span className={online ? 'status-chip online' : 'status-chip offline'}>
           {online ? <Wifi size={16} /> : <WifiOff size={16} />}
           通信 {statusJa(socketState)}
-        </span>
-        <span className="status-chip">
-          <RadioTower size={16} />
-          通信
         </span>
       </div>
     </header>

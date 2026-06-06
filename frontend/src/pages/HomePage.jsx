@@ -1,49 +1,45 @@
-import { Activity, AlertTriangle, CircleDollarSign, PackageOpen } from 'lucide-react';
-import { sales, stock } from '../data/mockData.js';
+import { Activity, CircleDollarSign, PackageOpen, RadioTower } from 'lucide-react';
 import { statusJa, yen } from '../utils/format.js';
 
-export default function HomePage({ socketState }) {
-  const revenue = sales.reduce((sum, item) => sum + item.price, 0);
-  const takeHome = sales.reduce((sum, item) => sum + item.price - item.cost - item.expense, 0);
-  const alerts = stock.filter((item) => item.quantity <= item.threshold);
+function deviceLabel(deviceId) {
+  return deviceId === 'device_b' ? 'B' : 'A';
+}
+
+export default function HomePage({ socketState, deviceId, salesRecords, products }) {
+  const ownSales = salesRecords.filter((item) => item.deviceId === deviceId);
+  const revenue = ownSales.reduce((sum, item) => sum + item.revenue, 0);
+  const takeHome = ownSales.reduce((sum, item) => sum + item.grossProfit * 0.75 + item.deliveryFee, 0);
+  const alerts = products.filter((item) => item.quantity <= item.threshold);
+  const label = deviceLabel(deviceId);
 
   return (
     <section className="page-stack">
       <div className="alert-strip">
-        <span className="signal-dot yellow" />
-        <strong>在庫監視 {alerts.length}件</strong>
-        <span>リアルタイム運用ダッシュボード</span>
+        <span className="signal-dot" />
+        <strong>&#x7aef;&#x672b;{label} &#x30c0;&#x30c3;&#x30b7;&#x30e5;&#x30dc;&#x30fc;&#x30c9;</strong>
+        <span>&#x3053;&#x306e;&#x30c7;&#x30d0;&#x30a4;&#x30b9;&#x5206;&#x306e;&#x58f2;&#x4e0a;&#x3068;&#x624b;&#x53d6;&#x308a;</span>
       </div>
       <div className="metric-grid">
         <article className="metric-card">
           <CircleDollarSign />
-          <span>売上</span>
+          <span>&#x81ea;&#x5206;&#x306e;&#x58f2;&#x4e0a;</span>
           <strong>{yen(revenue)}</strong>
         </article>
         <article className="metric-card">
           <Activity />
-          <span>手取り</span>
+          <span>&#x81ea;&#x5206;&#x306e;&#x624b;&#x53d6;&#x308a;</span>
           <strong>{yen(takeHome)}</strong>
         </article>
         <article className="metric-card danger">
-          <AlertTriangle />
-          <span>在庫警告</span>
+          <PackageOpen />
+          <span>&#x5728;&#x5eab;&#x30a2;&#x30e9;&#x30fc;&#x30c8;</span>
           <strong>{alerts.length}</strong>
         </article>
         <article className="metric-card">
-          <PackageOpen />
-          <span>通信状態</span>
+          <RadioTower />
+          <span>&#x901a;&#x4fe1;&#x72b6;&#x614b;</span>
           <strong>{statusJa(socketState)}</strong>
         </article>
-      </div>
-      <div className="wide-panel cyber-card">
-        <h2>警告フィード</h2>
-        {alerts.map((item) => (
-          <div className="feed-row" key={item.id}>
-            <span>{item.name}</span>
-            <strong>{item.quantity} / {item.threshold}</strong>
-          </div>
-        ))}
       </div>
     </section>
   );
