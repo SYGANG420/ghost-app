@@ -11,20 +11,22 @@ function percent(value, max) {
   return max ? Math.min(Math.round((value / max) * 100), 100) : 0;
 }
 
-export default function KpiPage({ salesRecords }) {
+export default function KpiPage({ salesRecords, selectedMonth, setSelectedMonth }) {
   const [subTab, setSubTab] = useState('actual');
   const [settlementPool, setSettlementPool] = useState(940000);
   const [elapsedMonths, setElapsedMonths] = useState(1);
   const [investments, setInvestments] = useState(seedInvestments);
   const [draft, setDraft] = useState(emptyInvestment);
-  const totalRevenue = salesRecords.reduce((sum, item) => sum + item.revenue, 0);
-  const grossProfit = salesRecords.reduce((sum, item) => sum + item.grossProfit, 0);
+  const monthRecords = salesRecords.filter((item) => String(item.date || '').startsWith(selectedMonth));
+  const totalRevenue = monthRecords.reduce((sum, item) => sum + item.revenue, 0);
+  const grossProfit = monthRecords.reduce((sum, item) => sum + item.grossProfit, 0);
   const commissionPool = Math.round(grossProfit * 0.75);
   const restockPool = Math.round(grossProfit * 0.15);
   const expenseReserve = grossProfit - commissionPool - restockPool;
-  const productBreakdown = salesRecords.reduce((acc, item) => ({ ...acc, [item.productName]: (acc[item.productName] || 0) + item.revenue }), {});
-  const staffGross = salesRecords.reduce((acc, item) => ({ ...acc, [item.staff]: (acc[item.staff] || 0) + item.grossProfit }), { A: 0, B: 0 });
-  const staffDelivery = salesRecords.reduce((acc, item) => ({ ...acc, [item.staff]: (acc[item.staff] || 0) + item.deliveryFee }), { A: 0, B: 0 });
+  const productBreakdown = monthRecords.reduce((acc, item) => ({ ...acc, [item.productName]: (acc[item.productName] || 0) + item.revenue }), {});
+  const staffGross = monthRecords.reduce((acc, item) => ({ ...acc, [item.staff]: (acc[item.staff] || 0) + item.grossProfit }), { A: 0, B: 0 });
+  const staffDelivery = monthRecords.reduce((acc, item) => ({ ...acc, [item.staff]: (acc[item.staff] || 0) + item.deliveryFee }), { A: 0, B: 0 });
+  const staffCount = monthRecords.reduce((acc, item) => ({ ...acc, [item.staff]: (acc[item.staff] || 0) + 1 }), { A: 0, B: 0 });
   const takeHomeA = Math.round(staffGross.A * 0.75 + staffDelivery.A);
   const takeHomeB = Math.round(staffGross.B * 0.75 + staffDelivery.B);
   const totalInvestment = investments.reduce((sum, item) => sum + item.amount, 0);
@@ -55,13 +57,17 @@ export default function KpiPage({ salesRecords }) {
       {subTab === 'actual' ? (
         <>
           <div className="wide-panel cyber-card">
-            <h2>&#x6708;&#x9593;&#x58f2;&#x4e0a;</h2>
+            <div className="panel-title-row">
+              <h2>&#x6708;&#x9593;&#x58f2;&#x4e0a;</h2>
+              <input className="month-input-inline" type="month" value={selectedMonth} onChange={(event) => setSelectedMonth(event.target.value)} />
+            </div>
             <div className="kpi-total">{yen(totalRevenue)}</div>
             {renderProgress(totalRevenue, MONTHLY_REVENUE_TARGET)}
             <div className="report-grid">
               {Object.entries(productBreakdown).map(([name, value]) => (
-                <div key={name}><span>&#x5546;&#x54c1;{name}</span><strong>{yen(value)}</strong></div>
+                <div key={name}><span>{name}</span><strong>{yen(value)}</strong></div>
               ))}
+              {Object.keys(productBreakdown).length === 0 && <div><span>&#x58f2;&#x4e0a;</span><strong>{yen(0)}</strong></div>}
             </div>
           </div>
           <div className="wide-panel cyber-card">
@@ -84,6 +90,14 @@ export default function KpiPage({ salesRecords }) {
             {renderProgress(takeHomeA, TAKE_HOME_TARGET)}
             <div className="payout-row"><span>B&#x3055;&#x3093;</span><strong>{yen(Math.round(staffGross.B * 0.75))} + {yen(staffDelivery.B)} = {yen(takeHomeB)}</strong></div>
             {renderProgress(takeHomeB, TAKE_HOME_TARGET)}
+            <div className="report-grid">
+              {['A', 'B'].map((name) => (
+                <div key={name}>
+                  <span>{name}&#x3055;&#x3093;&#x8a73;&#x7d30;</span>
+                  <strong>{staffCount[name]}&#x4ef6; / &#x7c97;&#x5229; {yen(staffGross[name])} / &#x914d;&#x9054; {yen(staffDelivery[name])}</strong>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="wide-panel cyber-card">
             <h2>&#xa5;1000&#x4e07; &#x9054;&#x6210;&#x9032;&#x6357;</h2>

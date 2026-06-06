@@ -1,12 +1,20 @@
 import { Activity, CircleDollarSign, PackageOpen, RadioTower } from 'lucide-react';
 import { statusJa, yen } from '../utils/format.js';
+import { useState } from 'react';
 
 function deviceLabel(deviceId) {
   return deviceId === 'device_b' ? 'B' : 'A';
 }
 
 export default function HomePage({ socketState, deviceId, salesRecords, products }) {
-  const ownSales = salesRecords.filter((item) => item.deviceId === deviceId);
+  const [range, setRange] = useState('month');
+  const today = new Date().toISOString().slice(0, 10);
+  const month = today.slice(0, 7);
+  const ownSales = salesRecords.filter((item) => {
+    if (item.deviceId !== deviceId) return false;
+    if (range === 'today') return item.date === today;
+    return String(item.date || '').startsWith(month);
+  });
   const revenue = ownSales.reduce((sum, item) => sum + item.revenue, 0);
   const takeHome = ownSales.reduce((sum, item) => sum + item.grossProfit * 0.75 + item.deliveryFee, 0);
   const alerts = products.filter((item) => item.quantity <= item.threshold);
@@ -18,6 +26,10 @@ export default function HomePage({ socketState, deviceId, salesRecords, products
         <span className="signal-dot" />
         <strong>&#x7aef;&#x672b;{label} &#x30c0;&#x30c3;&#x30b7;&#x30e5;&#x30dc;&#x30fc;&#x30c9;</strong>
         <span>&#x3053;&#x306e;&#x30c7;&#x30d0;&#x30a4;&#x30b9;&#x5206;&#x306e;&#x58f2;&#x4e0a;&#x3068;&#x624b;&#x53d6;&#x308a;</span>
+      </div>
+      <div className="segmented-row wide-panel compact-segment">
+        <button className={range === 'today' ? 'active' : ''} type="button" onClick={() => setRange('today')}>&#x4eca;&#x65e5;</button>
+        <button className={range === 'month' ? 'active' : ''} type="button" onClick={() => setRange('month')}>&#x4eca;&#x6708;</button>
       </div>
       <div className="metric-grid">
         <article className="metric-card">

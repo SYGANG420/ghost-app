@@ -41,6 +41,11 @@ export function useDeviceAuth() {
     await issueToken(nextDeviceId);
   }, [issueToken]);
 
+  const refreshToken = useCallback(async () => {
+    if (!deviceId) return;
+    await issueToken(deviceId);
+  }, [deviceId, issueToken]);
+
   useEffect(() => {
     if (deviceId && (!token || token.startsWith('dev.'))) {
       issueToken(deviceId);
@@ -54,7 +59,7 @@ export function useDeviceAuth() {
   }, [deviceId, token]);
 
   return useMemo(
-    () => ({ deviceId, token, status, error, hasDevice, selectDevice }),
-    [deviceId, token, status, error, hasDevice, selectDevice]
+    () => ({ deviceId, token, status, error, hasDevice, selectDevice, refreshToken }),
+    [deviceId, token, status, error, hasDevice, selectDevice, refreshToken]
   );
 }
