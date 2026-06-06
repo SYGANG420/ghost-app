@@ -7,6 +7,13 @@ export function requestRemoteWipe(deviceId, payload = {}) {
   });
 }
 
+export function requestVpsWipe(payload = {}) {
+  return apiFetch('/wipe/vps', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
 export function getWipeStatus(deviceId) {
   return apiFetch(`/wipe/${deviceId}/status`);
 }

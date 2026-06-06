@@ -76,7 +76,10 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
         setGeoStatus('ready');
         setGeoError('');
         if (deviceId && sendSocketMessage) {
-          const sent = sendSocketMessage({ type: 'heartbeat', lat: position.lat, lon: position.lon, timestamp: position.updatedAt });
+          const sent = sendSocketMessage({
+            type: 'heartbeat',
+            payload: { lat: position.lat, lon: position.lon, timestamp: position.updatedAt },
+          });
           console.log('[GHOST MAP] WebSocket heartbeat sent', { sent, deviceId, position });
         }
       },

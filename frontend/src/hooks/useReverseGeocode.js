@@ -35,10 +35,7 @@ export function useReverseGeocode(position) {
     reverseGeocode(lat, lon)
       .then((payload) => {
         if (cancelled) return;
-        const location = payload?.response?.location?.[0];
-        const nextAddress = location
-          ? `${location.prefecture || ''}${location.city || ''}${location.town || ''}${NEAR}`
-          : UNKNOWN;
+        const nextAddress = payload?.results?.lv01Nm ? `${payload.results.lv01Nm}${NEAR}` : UNKNOWN;
         cacheRef.current = { key: cacheKey, address: nextAddress, timestamp: Date.now() };
         setAddress(nextAddress);
         setStatus('ready');

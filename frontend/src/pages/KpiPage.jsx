@@ -14,6 +14,7 @@ function percent(value, max) {
 export default function KpiPage({ salesRecords }) {
   const [subTab, setSubTab] = useState('actual');
   const [settlementPool, setSettlementPool] = useState(940000);
+  const [elapsedMonths, setElapsedMonths] = useState(1);
   const [investments, setInvestments] = useState(seedInvestments);
   const [draft, setDraft] = useState(emptyInvestment);
   const totalRevenue = salesRecords.reduce((sum, item) => sum + item.revenue, 0);
@@ -42,6 +43,7 @@ export default function KpiPage({ salesRecords }) {
   const renderProgress = (value, max) => (
     <div className="bar-track"><span style={{ width: `${percent(value, max)}%` }} /></div>
   );
+  const remainingMonths = Math.max(18 - elapsedMonths, 1);
 
   return (
     <section className="page-stack">
@@ -58,12 +60,17 @@ export default function KpiPage({ salesRecords }) {
             {renderProgress(totalRevenue, MONTHLY_REVENUE_TARGET)}
             <div className="report-grid">
               {Object.entries(productBreakdown).map(([name, value]) => (
-                <div key={name}><span>{name}</span><strong>{yen(value)}</strong></div>
+                <div key={name}><span>&#x5546;&#x54c1;{name}</span><strong>{yen(value)}</strong></div>
               ))}
             </div>
           </div>
           <div className="wide-panel cyber-card">
             <h2>&#x7c97;&#x5229;&#x5185;&#x8a33;</h2>
+            <div className="allocation-bar">
+              <span style={{ width: '75%' }}>75%</span>
+              <span style={{ width: '15%' }}>15%</span>
+              <span style={{ width: '10%' }}>10%</span>
+            </div>
             <div className="report-grid">
               <div><span>&#x7c97;&#x5229;&#x5408;&#x8a08;</span><strong>{yen(grossProfit)}</strong></div>
               <div><span>&#x6b69;&#x5408;&#x30d7;&#x30fc;&#x30eb; 75%</span><strong>{yen(commissionPool)}</strong></div>
@@ -80,12 +87,16 @@ export default function KpiPage({ salesRecords }) {
           </div>
           <div className="wide-panel cyber-card">
             <h2>&#xa5;1000&#x4e07; &#x9054;&#x6210;&#x9032;&#x6357;</h2>
+            <label>
+              &#x7d4c;&#x904e;&#x6708;: {elapsedMonths}&#x30f6;&#x6708;&#x76ee; / &#x6b8b;&#x308a;{remainingMonths}&#x30f6;&#x6708;
+              <input type="range" min="1" max="17" value={elapsedMonths} onChange={(event) => setElapsedMonths(Number(event.target.value))} />
+            </label>
             {[
               ['A', takeHomeA],
               ['B', takeHomeB],
             ].map(([name, total]) => {
               const remaining = Math.max(FINAL_TARGET - total, 0);
-              const monthlyNeeded = Math.ceil(remaining / 12);
+              const monthlyNeeded = Math.ceil(remaining / remainingMonths);
               return (
                 <div className="target-block" key={name}>
                   <div className="payout-row"><span>{name}&#x3055;&#x3093;&#x7d2f;&#x8a08;</span><strong>{yen(total)}</strong></div>

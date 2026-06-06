@@ -63,8 +63,8 @@ export default function StockPage({ products, setProducts }) {
             </div>
             <div className="stock-inputs">
               <label>&#x88dc;&#x5145;&#x6570;<input type="number" value={restock[item.id] || ''} onChange={(event) => setRestock((current) => ({ ...current, [item.id]: event.target.value }))} /></label>
-              <button type="button" onClick={() => restockProduct(item.id)}><Plus size={16} /> &#x88dc;&#x5145;</button>
-              <button className="danger-button" type="button" onClick={() => deleteProduct(item.id)}><Trash2 size={16} /> &#x524a;&#x9664;</button>
+              <button className="stock-action-button" type="button" onClick={() => restockProduct(item.id)}><Plus size={14} /> &#x88dc;&#x5145;</button>
+              <button className="stock-action-button danger-button" type="button" onClick={() => deleteProduct(item.id)}><Trash2 size={14} /> &#x524a;&#x9664;</button>
             </div>
           </div>
         );
