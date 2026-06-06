@@ -29,11 +29,12 @@ export async function apiFetch(path, options = {}) {
 
 export async function reverseGeocode(lat, lon) {
   const params = new URLSearchParams({
-    lat: String(lat),
-    lon: String(lon),
+    method: 'searchByGeoLocation',
+    x: String(lon),
+    y: String(lat),
   });
 
-  const response = await fetch(`https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress?${params.toString()}`);
+  const response = await fetch(`https://geoapi.heartrails.com/api/json?${params.toString()}`);
 
   if (!response.ok) {
     throw new Error(`Reverse geocode failed: ${response.status}`);

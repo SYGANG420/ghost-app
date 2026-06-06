@@ -1,7 +1,7 @@
 {
-  "name": "GHOST CONTROL",
-  "short_name": "GHOST CONTROL",
-  "description": "GHOST CONTROL field operations dashboard",
+  "name": "\u96fb\u5353",
+  "short_name": "\u96fb\u5353",
+  "description": "\u96fb\u5353",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#08080f",

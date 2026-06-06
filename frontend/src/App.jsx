@@ -6,7 +6,7 @@ import TabBar from './components/TabBar.jsx';
 import { useDeviceAuth } from './hooks/useDeviceAuth.js';
 import { useGhostSocket } from './hooks/useGhostSocket.js';
 import { useNotification } from './hooks/useNotification.js';
-import { sales, stock } from './data/mockData.js';
+import { products as seedProducts, sales as seedSales } from './data/mockData.js';
 import CtrlPage from './pages/CtrlPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import KpiPage from './pages/KpiPage.jsx';
@@ -19,16 +19,17 @@ const tabs = ['HOME', 'MAP', 'SALES', 'STOCK', 'KPI', 'CTRL'];
 export default function App() {
   const [unlocked, setUnlocked] = useState(false);
   const [activeTab, setActiveTab] = useState('HOME');
+  const [products, setProducts] = useState(seedProducts);
+  const [salesRecords, setSalesRecords] = useState(seedSales);
   const auth = useDeviceAuth();
   const socket = useGhostSocket(auth.deviceId, auth.token);
-  const monthlyProfit = sales.reduce((sum, item) => sum + item.price - item.cost - item.expense, 0);
+  const monthlyProfit = salesRecords.reduce((sum, item) => sum + item.grossProfit, 0);
   const { NotificationCenter } = useNotification({
-    stockItems: unlocked ? stock : [],
+    stockItems: unlocked ? products : [],
     monthlyProfit,
     monthlyTarget: 180000,
     socketState: socket.state,
     deviceId: auth.deviceId,
-    vpnConnected: socket.state === 'online',
   });
 
   if (!unlocked) {
@@ -40,7 +41,7 @@ export default function App() {
   }
 
   const pages = {
-    HOME: <HomePage socketState={socket.state} />,
+    HOME: <HomePage socketState={socket.state} deviceId={auth.deviceId} salesRecords={salesRecords} products={products} />,
     MAP: (
       <MapPage
         socketState={socket.state}
@@ -49,10 +50,10 @@ export default function App() {
         deviceId={auth.deviceId}
       />
     ),
-    SALES: <SalesPage />,
-    STOCK: <StockPage />,
-    KPI: <KpiPage />,
-    CTRL: <CtrlPage socketState={socket.state} onLock={() => setUnlocked(false)} />,
+    SALES: <SalesPage deviceId={auth.deviceId} products={products} setProducts={setProducts} salesRecords={salesRecords} setSalesRecords={setSalesRecords} />,
+    STOCK: <StockPage products={products} setProducts={setProducts} />,
+    KPI: <KpiPage salesRecords={salesRecords} />,
+    CTRL: <CtrlPage deviceId={auth.deviceId} onLock={() => setUnlocked(false)} />,
   };
 
   return (

@@ -37,7 +37,7 @@ export default function CalculatorDecoy({ onUnlock }) {
   const [display, setDisplay] = useState('0');
   const [trail, setTrail] = useState('');
   const [unlockInput, setUnlockInput] = useState('');
-
+  const [launching, setLaunching] = useState(false);
   const expression = useMemo(() => (display === '0' ? '' : display), [display]);
 
   const press = (key) => {
@@ -47,47 +47,49 @@ export default function CalculatorDecoy({ onUnlock }) {
       setUnlockInput('');
       return;
     }
-
     if (key === 'SIGN') {
       setDisplay((current) => (current === '0' ? current : current.startsWith('-') ? current.slice(1) : `-${current}`));
       return;
     }
-
     if (key === '%') {
       setDisplay((current) => String(Number(current) / 100));
       return;
     }
-
     if (key === '=') {
       if (unlockInput === '1984') {
+        setLaunching(true);
         setDisplay('0');
         setTrail('');
         setUnlockInput('');
-        onUnlock();
+        window.setTimeout(onUnlock, 900);
         return;
       }
-
       setTrail(expression);
       setDisplay(calculate(expression));
       return;
     }
-
     if (/^\d$/.test(key)) {
       setUnlockInput((current) => `${current}${key}`.slice(-4));
     } else if (key !== '.') {
       setUnlockInput('');
     }
-
     setDisplay((current) => (current === '0' || current === 'Error' ? key : `${current}${key}`));
   };
+
+  if (launching) {
+    return (
+      <main className="calculator-shell">
+        <section className="ghost-launch">
+          <div className="brand-mark large">GC</div>
+          <strong>GHOST CONTROL</strong>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="calculator-shell">
       <section className="calculator">
-        <div className="calc-status">
-          <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-          <span>通信 電池</span>
-        </div>
         <div className="calc-display">
           <span>{trail}</span>
           <strong>{display}</strong>
