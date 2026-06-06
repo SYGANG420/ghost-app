@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-jose[cryptography]
+passlib[bcrypt]
+pydantic
+sqlcipher3
+python-multipart
+websockets
+aiofiles
