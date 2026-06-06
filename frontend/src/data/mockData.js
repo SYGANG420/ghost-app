@@ -10,13 +10,6 @@ export const stock = [
   { id: 3, name: 'Case', quantity: 4, threshold: 8, purchasePrice: 320 },
 ];
 
-export const position = {
-  lat: 35.681236,
-  lon: 139.767125,
-  speed: 0,
-  updatedAt: 'モック位置',
-};
-
 export const investments = [
   { id: 1, investor: 'A', date: '2026-05-04', amount: 700000, memo: 'Initial pool' },
   { id: 2, investor: 'B', date: '2026-05-11', amount: 500000, memo: 'Device and stock' },

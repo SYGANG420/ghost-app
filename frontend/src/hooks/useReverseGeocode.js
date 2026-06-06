@@ -10,6 +10,8 @@ export function useReverseGeocode(position) {
 
   useEffect(() => {
     if (!position) {
+      setAddress('住所取得待機中');
+      setStatus('idle');
       return;
     }
 
@@ -34,8 +36,9 @@ export function useReverseGeocode(position) {
         setAddress(nextAddress);
         setStatus('ready');
       })
-      .catch(() => {
+      .catch((error) => {
         if (cancelled) return;
+        console.log('[GHOST MAP] Reverse geocode error', error);
         setAddress('住所取得エラー');
         setStatus('error');
       });
