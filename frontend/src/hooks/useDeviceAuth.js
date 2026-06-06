@@ -28,6 +28,8 @@ export function useDeviceAuth() {
       setToken(nextToken);
       setStatus('ready');
     } catch (authError) {
+      localStorage.removeItem(TOKEN_KEY);
+      setToken('');
       setError(authError.message);
       setStatus('error');
     }

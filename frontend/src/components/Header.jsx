@@ -21,18 +21,18 @@ export default function Header({ activeTab, deviceId, socketState }) {
           <div className="brand-title">GHOST CONTROL</div>
           <div className="brand-subline">
             <span className="signal-dot" />
-            <span>{labels[activeTab]} / 保護中</span>
+            <span>{labels[activeTab]} / &#x4fdd;&#x8b77;&#x4e2d;</span>
           </div>
         </div>
       </div>
       <div className="header-status">
         <span className="status-chip">
           <Shield size={16} />
-          {deviceId || '端末未設定'}
+          {deviceId || '\u7aef\u672b\u672a\u8a2d\u5b9a'}
         </span>
         <span className={online ? 'status-chip online' : 'status-chip offline'}>
           {online ? <Wifi size={16} /> : <WifiOff size={16} />}
-          通信 {statusJa(socketState)}
+          &#x901a;&#x4fe1; {statusJa(socketState)}
         </span>
       </div>
     </header>

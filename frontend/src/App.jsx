@@ -72,7 +72,16 @@ export default function App() {
     SALES: <SalesPage deviceId={auth.deviceId} products={products} setProducts={setProducts} salesRecords={salesRecords} setSalesRecords={setSalesRecords} />,
     STOCK: <StockPage products={products} setProducts={setProducts} />,
     KPI: <KpiPage salesRecords={salesRecords} />,
-    CTRL: <CtrlPage deviceId={auth.deviceId} onLock={() => setUnlocked(false)} />,
+    CTRL: (
+      <CtrlPage
+        authError={auth.error}
+        authStatus={auth.status}
+        deviceId={auth.deviceId}
+        onLock={() => setUnlocked(false)}
+        socketDiagnostics={socket.diagnostics}
+        socketState={socket.state}
+      />
+    ),
   };
 
   return (

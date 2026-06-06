@@ -7,10 +7,9 @@ function today() {
 }
 
 export default function SalesPage({ deviceId, products, setProducts, salesRecords, setSalesRecords }) {
-  const firstProduct = products[0];
   const [draft, setDraft] = useState({
     date: today(),
-    productId: firstProduct?.id || '',
+    productId: '',
     quantity: 1,
     staff: '',
     delivery: false,
@@ -18,13 +17,14 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
     salePrice: '',
   });
 
-  const selectedProduct = products.find((item) => item.id === draft.productId) || firstProduct;
+  const selectedProduct = products.find((item) => item.id === draft.productId);
   const quantity = Math.max(Number(draft.quantity) || 1, 1);
   const purchasePrice = selectedProduct?.purchasePrice || 0;
   const salePrice = Number(draft.salePrice) || 0;
   const deliveryFee = draft.delivery ? Number(draft.deliveryFee) || 0 : 0;
   const revenue = selectedProduct ? salePrice * quantity : 0;
-  const grossProfit = selectedProduct ? revenue - purchasePrice * quantity - deliveryFee : 0;
+  const productGrossProfit = selectedProduct ? revenue - purchasePrice * quantity : 0;
+  const totalProfit = productGrossProfit + deliveryFee;
   const insufficient = selectedProduct ? quantity > selectedProduct.quantity : true;
   const formReady = Boolean(draft.date && draft.staff && selectedProduct && salePrice > 0 && !insufficient);
   const monthlyTotal = salesRecords.reduce((sum, item) => sum + item.revenue, 0);
@@ -34,7 +34,6 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
   };
 
   const selectProduct = (productId) => {
-    const product = products.find((item) => item.id === productId);
     setDraft((current) => ({ ...current, productId }));
   };
 
@@ -55,7 +54,7 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
       delivery: draft.delivery,
       deliveryFee,
       revenue,
-      grossProfit,
+      grossProfit: productGrossProfit,
     };
 
     setSalesRecords((current) => [sale, ...current]);
@@ -88,6 +87,7 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
         <label>
           &#x5546;&#x54c1;&#x9078;&#x629e;
           <select value={draft.productId} onChange={(event) => selectProduct(event.target.value)}>
+            <option value="">&#x672a;&#x9078;&#x629e;</option>
             {products.map((item) => (
               <option value={item.id} key={item.id}>
                 {item.code || item.name} / {item.name}
@@ -136,14 +136,16 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
           </label>
         )}
 
-        <div className={insufficient ? 'alert-strip danger-inline' : 'alert-strip'}>
-          <span className={insufficient ? 'signal-dot red' : 'signal-dot'} />
-          {insufficient ? (
+        <div className={!selectedProduct || insufficient ? 'alert-strip danger-inline' : 'alert-strip'}>
+          <span className={!selectedProduct || insufficient ? 'signal-dot red' : 'signal-dot'} />
+          {!selectedProduct ? (
+            <strong>&#x5546;&#x54c1;&#x3092;&#x9078;&#x629e;&#x3057;&#x3066;&#x304f;&#x3060;&#x3055;&#x3044;</strong>
+          ) : insufficient ? (
             <strong>&#x5728;&#x5eab;&#x4e0d;&#x8db3;&#x306e;&#x305f;&#x3081;&#x767b;&#x9332;&#x4e0d;&#x53ef;</strong>
           ) : (
             <strong>&#x5728;&#x5eab; {selectedProduct?.quantity || 0} / &#x767b;&#x9332;&#x53ef;&#x80fd;</strong>
           )}
-          <span>&#x7c97;&#x5229; {yen(grossProfit)}</span>
+          <span>&#x5546;&#x54c1;&#x7c97;&#x5229; {yen(productGrossProfit)} / &#x914d;&#x9054;&#x6599; {yen(deliveryFee)} / &#x5408;&#x8a08; {yen(totalProfit)}</span>
         </div>
 
         <button type="submit" disabled={!formReady}>
@@ -159,7 +161,7 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
             <strong>{item.productName}</strong>
             <span>{item.quantity}&#x70b9;</span>
             <span>{yen(item.revenue)}</span>
-            <em>{yen(item.grossProfit)}</em>
+            <em>{yen((item.grossProfit || 0) + (item.deliveryFee || 0))}</em>
           </div>
         ))}
       </div>
