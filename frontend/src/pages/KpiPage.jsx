@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { investments as seedInvestments, sales } from '../data/mockData.js';
+import { yen } from '../utils/format.js';
 
 const emptyInvestment = {
   investor: 'A',
@@ -9,7 +10,7 @@ const emptyInvestment = {
 };
 
 export default function KpiPage() {
-  const [subTab, setSubTab] = useState('PERFORMANCE');
+  const [subTab, setSubTab] = useState('実績');
   const [dailyUnits, setDailyUnits] = useState(4);
   const [unitProfit, setUnitProfit] = useState(42000);
   const [settlementPool, setSettlementPool] = useState(940000);
@@ -36,75 +37,75 @@ export default function KpiPage() {
   return (
     <section className="page-stack">
       <div className="subtabs wide-panel">
-        {['PERFORMANCE', 'INVESTMENT'].map((tab) => (
+        {['実績', '出資'].map((tab) => (
           <button className={subTab === tab ? 'active' : ''} key={tab} type="button" onClick={() => setSubTab(tab)}>
             {tab}
           </button>
         ))}
       </div>
 
-      {subTab === 'PERFORMANCE' ? (
+      {subTab === '実績' ? (
         <>
           <div className="metric-card">
-            <span>ACTUAL PROFIT</span>
-            <strong>JPY {actualProfit.toLocaleString()}</strong>
+            <span>実績粗利</span>
+            <strong>{yen(actualProfit)}</strong>
           </div>
           <div className="metric-card">
-            <span>30D FORECAST</span>
-            <strong>JPY {forecast.toLocaleString()}</strong>
+            <span>30日試算</span>
+            <strong>{yen(forecast)}</strong>
           </div>
           <div className="wide-panel">
-            <h2>SIMULATION</h2>
-            <label>DAILY UNITS<input type="range" min="1" max="20" value={dailyUnits} onChange={(event) => setDailyUnits(Number(event.target.value))} /></label>
-            <label>UNIT PROFIT<input type="range" min="5000" max="120000" step="1000" value={unitProfit} onChange={(event) => setUnitProfit(Number(event.target.value))} /></label>
+            <h2>試算</h2>
+            <label>1日販売数<input type="range" min="1" max="20" value={dailyUnits} onChange={(event) => setDailyUnits(Number(event.target.value))} /></label>
+            <label>1件粗利<input type="range" min="5000" max="120000" step="1000" value={unitProfit} onChange={(event) => setUnitProfit(Number(event.target.value))} /></label>
           </div>
         </>
       ) : (
         <>
           <div className="metric-card">
-            <span>TOTAL INVESTMENT</span>
-            <strong>JPY {totalInvestment.toLocaleString()}</strong>
+            <span>累計出資</span>
+            <strong>{yen(totalInvestment)}</strong>
           </div>
           <div className="metric-card">
-            <span>A / B RATIO</span>
+            <span>A / B 比率</span>
             <strong>{ratioA}% / {ratioB}%</strong>
           </div>
           <div className="wide-panel">
-            <h2>INVESTMENT RATIO</h2>
+            <h2>出資比率</h2>
             <div className="ratio-bar" aria-label="Investment ratio">
               <span style={{ width: `${ratioA}%` }}>A {ratioA}%</span>
               <span style={{ width: `${ratioB}%` }}>B {ratioB}%</span>
             </div>
           </div>
           <form className="wide-panel compact-form" onSubmit={addInvestment}>
-            <h2>NEW INVESTMENT</h2>
-            <label>INVESTOR
+            <h2>新規出資</h2>
+            <label>出資者
               <select value={draft.investor} onChange={(event) => setDraft({ ...draft, investor: event.target.value })}>
                 <option value="A">A</option>
                 <option value="B">B</option>
               </select>
             </label>
-            <label>DATE<input type="date" value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} /></label>
-            <label>AMOUNT<input type="number" value={draft.amount} onChange={(event) => setDraft({ ...draft, amount: event.target.value })} /></label>
-            <label>MEMO<input value={draft.memo} onChange={(event) => setDraft({ ...draft, memo: event.target.value })} /></label>
-            <button type="submit">REGISTER</button>
+            <label>日付<input type="date" value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} /></label>
+            <label>金額<input type="number" value={draft.amount} onChange={(event) => setDraft({ ...draft, amount: event.target.value })} /></label>
+            <label>メモ<input value={draft.memo} onChange={(event) => setDraft({ ...draft, memo: event.target.value })} /></label>
+            <button type="submit">登録</button>
           </form>
           <div className="wide-panel">
-            <h2>INVESTMENT HISTORY</h2>
+            <h2>出資履歴</h2>
             {investments.map((item) => (
               <div className="investment-row" key={item.id}>
                 <span>{item.date}</span>
                 <strong>{item.investor}</strong>
-                <span>JPY {item.amount.toLocaleString()}</span>
-                <span>{item.memo || 'NO MEMO'}</span>
+                <span>{yen(item.amount)}</span>
+                <span>{item.memo || 'メモなし'}</span>
               </div>
             ))}
           </div>
           <div className="wide-panel">
-            <h2>SETTLEMENT SIMULATOR</h2>
-            <label>POOL<input type="range" min="100000" max="3000000" step="10000" value={settlementPool} onChange={(event) => setSettlementPool(Number(event.target.value))} /></label>
-            <div className="feed-row"><span>A PAYOUT</span><strong>JPY {settlementA.toLocaleString()}</strong></div>
-            <div className="feed-row"><span>B PAYOUT</span><strong>JPY {settlementB.toLocaleString()}</strong></div>
+            <h2>清算シミュレーター</h2>
+            <label>清算原資<input type="range" min="100000" max="3000000" step="10000" value={settlementPool} onChange={(event) => setSettlementPool(Number(event.target.value))} /></label>
+            <div className="feed-row"><span>A清算額</span><strong>{yen(settlementA)}</strong></div>
+            <div className="feed-row"><span>B清算額</span><strong>{yen(settlementB)}</strong></div>
           </div>
         </>
       )}

@@ -1,5 +1,6 @@
 import { Activity, AlertTriangle, CircleDollarSign, PackageOpen } from 'lucide-react';
 import { sales, stock } from '../data/mockData.js';
+import { statusJa, yen } from '../utils/format.js';
 
 export default function HomePage({ socketState }) {
   const revenue = sales.reduce((sum, item) => sum + item.price, 0);
@@ -10,33 +11,33 @@ export default function HomePage({ socketState }) {
     <section className="page-stack">
       <div className="alert-strip">
         <span className="signal-dot yellow" />
-        <strong>{alerts.length} STOCK WATCH</strong>
-        <span>Realtime operations dashboard</span>
+        <strong>在庫監視 {alerts.length}件</strong>
+        <span>リアルタイム運用ダッシュボード</span>
       </div>
       <div className="metric-grid">
         <article className="metric-card">
           <CircleDollarSign />
-          <span>SALES</span>
-          <strong>JPY {revenue.toLocaleString()}</strong>
+          <span>売上</span>
+          <strong>{yen(revenue)}</strong>
         </article>
         <article className="metric-card">
           <Activity />
-          <span>TAKE HOME</span>
-          <strong>JPY {takeHome.toLocaleString()}</strong>
+          <span>手取り</span>
+          <strong>{yen(takeHome)}</strong>
         </article>
         <article className="metric-card danger">
           <AlertTriangle />
-          <span>STOCK ALERT</span>
+          <span>在庫警告</span>
           <strong>{alerts.length}</strong>
         </article>
         <article className="metric-card">
           <PackageOpen />
-          <span>ONLINE STATE</span>
-          <strong>{socketState.toUpperCase()}</strong>
+          <span>通信状態</span>
+          <strong>{statusJa(socketState)}</strong>
         </article>
       </div>
       <div className="wide-panel cyber-card">
-        <h2>ALERT FEED</h2>
+        <h2>警告フィード</h2>
         {alerts.map((item) => (
           <div className="feed-row" key={item.id}>
             <span>{item.name}</span>

@@ -14,7 +14,7 @@ export const position = {
   lat: 35.681236,
   lon: 139.767125,
   speed: 0,
-  updatedAt: 'LIVE MOCK',
+  updatedAt: 'モック位置',
 };
 
 export const investments = [

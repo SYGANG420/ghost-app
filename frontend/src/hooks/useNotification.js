@@ -26,7 +26,7 @@ export function useNotification({ stockItems = [], monthlyProfit = 0, monthlyTar
       }
 
       if (getPermission() === 'granted') {
-        new Notification('GHOST CONTROL', { body: text });
+        new Notification('ゴーストコントロール', { body: text });
       }
 
       window.setTimeout(() => dismiss(id), 6500);

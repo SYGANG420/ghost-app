@@ -1,5 +1,6 @@
 import { FileDown, Lock, Power, ShieldAlert, TimerReset } from 'lucide-react';
 import { investments, monthlyReport } from '../data/mockData.js';
+import { yen } from '../utils/format.js';
 
 export default function CtrlPage({ onLock, socketState }) {
   const totalInvestment = investments.reduce((sum, item) => sum + item.amount, 0);
@@ -12,14 +13,14 @@ export default function CtrlPage({ onLock, socketState }) {
     const doc = new jsPDF();
 
     doc.setFont('helvetica', 'bold');
-    doc.text('GHOST CONTROL Monthly Report', 14, 18);
+    doc.text('月次レポート', 14, 18);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Sales: JPY ${monthlyReport.lastMonthSales.toLocaleString()}`, 14, 34);
-    doc.text(`Gross Profit: JPY ${monthlyReport.lastMonthGross.toLocaleString()}`, 14, 44);
-    doc.text(`Take Home A: JPY ${monthlyReport.takeHomeA.toLocaleString()}`, 14, 54);
-    doc.text(`Take Home B: JPY ${monthlyReport.takeHomeB.toLocaleString()}`, 14, 64);
-    doc.text(`Investment Ratio: A ${ratioA}% / B ${ratioB}%`, 14, 74);
-    doc.text(`Snapshot: ${monthlyReport.snapshotDate}`, 14, 84);
+    doc.text(`売上: ${yen(monthlyReport.lastMonthSales)}`, 14, 34);
+    doc.text(`粗利: ${yen(monthlyReport.lastMonthGross)}`, 14, 44);
+    doc.text(`A手取り: ${yen(monthlyReport.takeHomeA)}`, 14, 54);
+    doc.text(`B手取り: ${yen(monthlyReport.takeHomeB)}`, 14, 64);
+    doc.text(`出資比率: A ${ratioA}% / B ${ratioB}%`, 14, 74);
+    doc.text(`基準日: ${monthlyReport.snapshotDate}`, 14, 84);
     doc.save('ghost-control-monthly-report.pdf');
   };
 
@@ -28,37 +29,37 @@ export default function CtrlPage({ onLock, socketState }) {
       <div className="ctrl-grid">
         <button className="control-tile danger" type="button">
           <ShieldAlert size={24} />
-          <span>REMOTE WIPE</span>
-          <strong>ARMED</strong>
+          <span>リモート消去</span>
+          <strong>待機中</strong>
         </button>
         <button className="control-tile warning" type="button">
           <TimerReset size={24} />
-          <span>DEAD MAN SWITCH</span>
-          <strong>72H</strong>
+          <span>デッドマン</span>
+          <strong>72時間</strong>
         </button>
         <button className="control-tile" type="button">
           <Power size={24} />
-          <span>VPN STATE</span>
-          <strong>{socketState === 'online' ? 'LINKED' : 'UNKNOWN'}</strong>
+          <span>VPN状態</span>
+          <strong>{socketState === 'online' ? '接続中' : '不明'}</strong>
         </button>
         <button className="control-tile lock" type="button" onClick={onLock}>
           <Lock size={24} />
-          <span>LOCK TO CALC</span>
-          <strong>LOCK NOW</strong>
+          <span>電卓へ戻る</span>
+          <strong>即時ロック</strong>
         </button>
       </div>
       <div className="wide-panel monthly-report cyber-card">
         <div className="panel-title-row">
-          <h2>MONTHLY REPORT</h2>
-          <button type="button" onClick={savePdf}><FileDown size={16} /> PDF SAVE</button>
+          <h2>月次レポート</h2>
+          <button type="button" onClick={savePdf}><FileDown size={16} /> 保存</button>
         </div>
         <div className="report-grid">
-          <div><span>LAST MONTH SALES</span><strong>JPY {monthlyReport.lastMonthSales.toLocaleString()}</strong></div>
-          <div><span>GROSS PROFIT</span><strong>JPY {monthlyReport.lastMonthGross.toLocaleString()}</strong></div>
-          <div><span>A TAKE HOME</span><strong>JPY {monthlyReport.takeHomeA.toLocaleString()}</strong></div>
-          <div><span>B TAKE HOME</span><strong>JPY {monthlyReport.takeHomeB.toLocaleString()}</strong></div>
-          <div><span>INVESTMENT SNAPSHOT</span><strong>A {ratioA}% / B {ratioB}%</strong></div>
-          <div><span>SNAPSHOT DATE</span><strong>{monthlyReport.snapshotDate}</strong></div>
+          <div><span>先月売上</span><strong>{yen(monthlyReport.lastMonthSales)}</strong></div>
+          <div><span>粗利</span><strong>{yen(monthlyReport.lastMonthGross)}</strong></div>
+          <div><span>A手取り</span><strong>{yen(monthlyReport.takeHomeA)}</strong></div>
+          <div><span>B手取り</span><strong>{yen(monthlyReport.takeHomeB)}</strong></div>
+          <div><span>出資比率</span><strong>A {ratioA}% / B {ratioB}%</strong></div>
+          <div><span>基準日</span><strong>{monthlyReport.snapshotDate}</strong></div>
         </div>
       </div>
     </section>

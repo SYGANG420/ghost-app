@@ -56,8 +56,8 @@ button {
 }
 
 .calculator {
-  width: min(360px, 100%);
-  min-height: 720px;
+  width: min(393px, 100%);
+  min-height: min(851px, 100vh);
   display: flex;
   flex-direction: column;
   background: #1c1c1e;
@@ -73,7 +73,7 @@ button {
   justify-content: space-between;
   color: #fff;
   font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   padding: 2px 4px 8px;
 }
@@ -144,7 +144,7 @@ button {
 
 .setup-panel,
 .app-shell {
-  width: min(390px, 100%);
+  width: min(393px, 100%);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 32px;
@@ -157,7 +157,7 @@ button {
 }
 
 .app-shell {
-  height: min(760px, calc(100vh - 32px));
+  height: min(851px, calc(100vh - 24px));
   display: flex;
   flex-direction: column;
 }
@@ -166,7 +166,8 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 18px 12px;
+  min-height: 72px;
+  padding: 14px 16px 12px;
   background: var(--card);
   border-bottom: 1px solid var(--border);
 }
@@ -193,7 +194,7 @@ button {
 
 .brand-title {
   color: var(--text);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 900;
 }
 
@@ -202,7 +203,7 @@ button {
   align-items: center;
   gap: 5px;
   color: var(--accent);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -245,7 +246,7 @@ button {
   background: rgba(0, 229, 180, 0.08);
   color: var(--accent);
   padding: 2px 8px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -271,7 +272,7 @@ button {
 }
 
 .tabbar button {
-  min-height: 46px;
+  min-height: 52px;
   display: grid;
   place-items: center;
   gap: 2px;
@@ -279,7 +280,7 @@ button {
   border-bottom: 2px solid transparent;
   background: transparent;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
 }
 
@@ -298,7 +299,7 @@ button {
   flex: 1;
   overflow-y: auto;
   scrollbar-width: none;
-  padding: 14px 14px 18px;
+  padding: 14px 14px 20px;
 }
 
 .content::-webkit-scrollbar {
@@ -336,7 +337,7 @@ button {
 
 .metric-card,
 .control-tile {
-  min-height: 118px;
+  min-height: 124px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -353,14 +354,14 @@ button {
 .control-tile span,
 .report-grid span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 .metric-card strong,
 .control-tile strong {
   color: var(--text);
-  font-size: clamp(18px, 5vw, 24px);
+  font-size: clamp(19px, 5vw, 25px);
   overflow-wrap: anywhere;
 }
 
@@ -393,7 +394,7 @@ button {
   background: var(--yellow-dim);
   padding: 8px 12px;
   color: var(--yellow);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .alert-strip span:last-child {
@@ -416,7 +417,7 @@ h1 {
 
 h2 {
   color: var(--blue);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 900;
 }
 
@@ -424,13 +425,13 @@ h2 {
 .muted,
 .setup-note {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   margin: 0 0 8px;
 }
 
 .mono {
   color: var(--accent);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .feed-row,
@@ -458,14 +459,14 @@ label {
   gap: 6px;
   margin-top: 10px;
   color: var(--dim);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 }
 
 input,
 select {
   width: 100%;
-  min-height: 40px;
+  min-height: 44px;
   border: 1px solid rgba(77, 158, 255, 0.25);
   border-radius: 10px;
   background: var(--surface);
@@ -492,7 +493,7 @@ input[type="range"] {
 .subtabs button,
 .compact-form button,
 .panel-title-row button {
-  min-height: 34px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -502,7 +503,7 @@ input[type="range"] {
   background: var(--accent-dim);
   color: var(--accent);
   padding: 0 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -523,7 +524,7 @@ input[type="range"] {
 
 .map-shell {
   position: relative;
-  height: 260px;
+  height: 286px;
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 14px;
