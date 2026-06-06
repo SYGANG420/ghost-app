@@ -49,11 +49,13 @@ export default function App() {
   };
 
   return (
-    <div className="app-shell">
-      <Header activeTab={activeTab} deviceId={auth.deviceId} socketState={socket.state} />
-      <NotificationCenter />
-      <main className="content">{pages[activeTab]}</main>
-      <TabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+    <div className="app-stage">
+      <div className="app-shell">
+        <Header activeTab={activeTab} deviceId={auth.deviceId} socketState={socket.state} />
+        <TabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+        <NotificationCenter />
+        <main className="content">{pages[activeTab]}</main>
+      </div>
     </div>
   );
 }

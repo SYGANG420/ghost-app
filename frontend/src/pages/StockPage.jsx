@@ -9,23 +9,35 @@ export default function StockPage() {
   };
 
   return (
-    <section className="wide-panel">
-      <h2>STOCK MATRIX</h2>
-      <div className="table">
-        <div className="table-head"><span>ITEM</span><span>QTY</span><span>THRESHOLD</span><span>BUY</span><span>STATE</span></div>
-        {items.map((item) => {
-          const alert = item.quantity <= item.threshold;
-          return (
-            <div className={alert ? 'table-row alert' : 'table-row'} key={item.id}>
-              <span>{item.name}</span>
-              <input type="number" value={item.quantity} onChange={(event) => updateItem(item.id, 'quantity', event.target.value)} />
-              <input type="number" value={item.threshold} onChange={(event) => updateItem(item.id, 'threshold', event.target.value)} />
-              <input type="number" value={item.purchasePrice} onChange={(event) => updateItem(item.id, 'purchasePrice', event.target.value)} />
-              <strong>{alert ? 'LOW' : 'OK'}</strong>
-            </div>
-          );
-        })}
+    <section className="page-stack">
+      <div className="alert-strip">
+        <span className="signal-dot yellow" />
+        <strong>STOCK MATRIX</strong>
+        <span>Red border means threshold alert</span>
       </div>
+      {items.map((item) => {
+        const alert = item.quantity <= item.threshold;
+        return (
+          <div className={alert ? 'stock-card alert' : 'stock-card'} key={item.id}>
+            <div className="panel-title-row">
+              <h2>{item.name}</h2>
+              <span className={alert ? 'pill danger' : 'pill online'}>{alert ? 'LOW' : 'OK'}</span>
+            </div>
+            <div className="stock-count">
+              <strong>{item.quantity}</strong>
+              <span>THRESHOLD {item.threshold}</span>
+            </div>
+            <div className="bar-track">
+              <span style={{ width: `${Math.min((item.quantity / Math.max(item.threshold * 3, 1)) * 100, 100)}%` }} />
+            </div>
+            <div className="stock-inputs">
+              <label>QTY<input type="number" value={item.quantity} onChange={(event) => updateItem(item.id, 'quantity', event.target.value)} /></label>
+              <label>THRESHOLD<input type="number" value={item.threshold} onChange={(event) => updateItem(item.id, 'threshold', event.target.value)} /></label>
+              <label>BUY<input type="number" value={item.purchasePrice} onChange={(event) => updateItem(item.id, 'purchasePrice', event.target.value)} /></label>
+            </div>
+          </div>
+        );
+      })}
     </section>
   );
 }
