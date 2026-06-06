@@ -1,0 +1,13 @@
+[Unit]
+Description=Ghost Control API
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/ghost-app/ghost-app
+Environment=GHOST_DB_KEY=CHANGE_ME
+Environment=JWT_SECRET=CHANGE_ME
+ExecStart=/opt/ghost-app/ghost-app/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
