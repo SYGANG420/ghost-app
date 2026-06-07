@@ -66,6 +66,12 @@ async def websocket_endpoint(websocket: WebSocket, device_id: str, token: str):
                 payload = Heartbeat(**data)
                 location = _upsert_location(device_id, payload, websocket_online=1)
                 await manager.broadcast({"type": "location_update", "device_id": device_id, "location": location})
+            elif message.get("type") == "ping":
+                await websocket.send_json({
+                    "type": "pong",
+                    "device_id": device_id,
+                    "server_time": utc_now_iso(),
+                })
     except WebSocketDisconnect:
         pass
     finally:

@@ -11,24 +11,26 @@ function percent(value, max) {
   return max ? Math.min(Math.round((value / max) * 100), 100) : 0;
 }
 
-export default function KpiPage({ salesRecords, selectedMonth, setSelectedMonth }) {
+export default function KpiPage({ salesRecords, selectedMonth, setSelectedMonth, kpiSummary }) {
   const [subTab, setSubTab] = useState('actual');
   const [settlementPool, setSettlementPool] = useState(940000);
   const [elapsedMonths, setElapsedMonths] = useState(1);
   const [investments, setInvestments] = useState(seedInvestments);
   const [draft, setDraft] = useState(emptyInvestment);
   const monthRecords = salesRecords.filter((item) => String(item.date || '').startsWith(selectedMonth));
-  const totalRevenue = monthRecords.reduce((sum, item) => sum + item.revenue, 0);
-  const grossProfit = monthRecords.reduce((sum, item) => sum + item.grossProfit, 0);
+  const totalRevenue = kpiSummary?.revenue ?? monthRecords.reduce((sum, item) => sum + item.revenue, 0);
+  const grossProfit = kpiSummary?.gross ?? monthRecords.reduce((sum, item) => sum + item.grossProfit, 0);
   const commissionPool = Math.round(grossProfit * 0.75);
   const restockPool = Math.round(grossProfit * 0.15);
   const expenseReserve = grossProfit - commissionPool - restockPool;
   const productBreakdown = monthRecords.reduce((acc, item) => ({ ...acc, [item.productName]: (acc[item.productName] || 0) + item.revenue }), {});
+  const productGrossBreakdown = monthRecords.reduce((acc, item) => ({ ...acc, [item.productName]: (acc[item.productName] || 0) + item.grossProfit }), {});
+  const dailyBreakdown = monthRecords.reduce((acc, item) => ({ ...acc, [item.date]: (acc[item.date] || 0) + item.revenue }), {});
   const staffGross = monthRecords.reduce((acc, item) => ({ ...acc, [item.staff]: (acc[item.staff] || 0) + item.grossProfit }), { A: 0, B: 0 });
   const staffDelivery = monthRecords.reduce((acc, item) => ({ ...acc, [item.staff]: (acc[item.staff] || 0) + item.deliveryFee }), { A: 0, B: 0 });
   const staffCount = monthRecords.reduce((acc, item) => ({ ...acc, [item.staff]: (acc[item.staff] || 0) + 1 }), { A: 0, B: 0 });
-  const takeHomeA = Math.round(staffGross.A * 0.75 + staffDelivery.A);
-  const takeHomeB = Math.round(staffGross.B * 0.75 + staffDelivery.B);
+  const takeHomeA = Math.round(kpiSummary?.take_home?.A ?? (staffGross.A * 0.75 + staffDelivery.A));
+  const takeHomeB = Math.round(kpiSummary?.take_home?.B ?? (staffGross.B * 0.75 + staffDelivery.B));
   const totalInvestment = investments.reduce((sum, item) => sum + item.amount, 0);
   const investmentTotals = investments.reduce((acc, item) => ({ ...acc, [item.investor]: (acc[item.investor] || 0) + item.amount }), { A: 0, B: 0 });
   const ratioA = totalInvestment > 0 ? Math.round((investmentTotals.A / totalInvestment) * 100) : 50;
@@ -63,6 +65,11 @@ export default function KpiPage({ salesRecords, selectedMonth, setSelectedMonth 
             </div>
             <div className="kpi-total">{yen(totalRevenue)}</div>
             {renderProgress(totalRevenue, MONTHLY_REVENUE_TARGET)}
+            <div className="mini-chart">
+              {Object.entries(dailyBreakdown).slice(-10).map(([date, value]) => (
+                <span key={date} style={{ height: `${Math.max(8, percent(value, Math.max(...Object.values(dailyBreakdown), 1)))}%` }} title={`${date} ${yen(value)}`} />
+              ))}
+            </div>
             <div className="report-grid">
               {Object.entries(productBreakdown).map(([name, value]) => (
                 <div key={name}><span>{name}</span><strong>{yen(value)}</strong></div>
@@ -82,6 +89,12 @@ export default function KpiPage({ salesRecords, selectedMonth, setSelectedMonth 
               <div><span>&#x6b69;&#x5408;&#x30d7;&#x30fc;&#x30eb; 75%</span><strong>{yen(commissionPool)}</strong></div>
               <div><span>&#x518d;&#x4ed5;&#x5165;&#x308c; 15%</span><strong>{yen(restockPool)}</strong></div>
               <div><span>&#x7d4c;&#x8cbb;&#x7a4d;&#x7acb; 10%</span><strong>{yen(expenseReserve)}</strong></div>
+            </div>
+            <div className="wide-panel embedded-panel">
+              <h2>&#x5546;&#x54c1;&#x5225;&#x7c97;&#x5229;&#x30e9;&#x30f3;&#x30ad;&#x30f3;&#x30b0;</h2>
+              {Object.entries(productGrossBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, value]) => (
+                <div className="feed-row" key={name}><span>{name}</span><strong>{yen(value)}</strong></div>
+              ))}
             </div>
           </div>
           <div className="wide-panel cyber-card">

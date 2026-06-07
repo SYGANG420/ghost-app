@@ -5,7 +5,7 @@ export function listStock() {
 }
 
 export function createStockItem(payload) {
-  return apiFetch('/stock', {
+  return apiFetch('/stock/item', {
     method: 'POST',
     body: payload,
   });
@@ -28,4 +28,22 @@ export function acknowledgeStockAlert(id) {
   return apiFetch(`/stock/${id}/ack-alert`, {
     method: 'POST',
   });
+}
+
+export function restockItem(payload) {
+  return apiFetch('/stock/restock', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function inventoryAdjust(payload) {
+  return apiFetch('/stock/inventory', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function listStockHistory() {
+  return apiFetch('/stock/history');
 }

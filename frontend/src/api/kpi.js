@@ -2,7 +2,7 @@ import { apiFetch } from './client.js';
 
 export function getKpiSummary(params = {}) {
   const query = new URLSearchParams(params).toString();
-  return apiFetch(`/kpi/summary${query ? `?${query}` : ''}`);
+  return apiFetch(`/kpi/actual${query ? `?${query}` : ''}`);
 }
 
 export function getInvestmentHistory() {

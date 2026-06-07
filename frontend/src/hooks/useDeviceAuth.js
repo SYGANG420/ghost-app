@@ -47,6 +47,15 @@ export function useDeviceAuth() {
     await issueToken(deviceId);
   }, [deviceId, issueToken]);
 
+  const resetDevice = useCallback(() => {
+    localStorage.removeItem(DEVICE_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    setDeviceId('');
+    setToken('');
+    setStatus('idle');
+    setError('');
+  }, []);
+
   useEffect(() => {
     if (!deviceId) return;
     if (!bootRefreshRef.current) {
@@ -66,7 +75,7 @@ export function useDeviceAuth() {
   }, [deviceId, token]);
 
   return useMemo(
-    () => ({ deviceId, token, status, error, hasDevice, selectDevice, refreshToken }),
-    [deviceId, token, status, error, hasDevice, selectDevice, refreshToken]
+    () => ({ deviceId, token, status, error, hasDevice, selectDevice, refreshToken, resetDevice }),
+    [deviceId, token, status, error, hasDevice, selectDevice, refreshToken, resetDevice]
   );
 }

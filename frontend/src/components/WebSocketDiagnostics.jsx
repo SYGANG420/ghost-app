@@ -10,6 +10,8 @@ const TEXT = {
   url: '\u63a5\u7d9a\u5148',
   opened: '\u6700\u5f8c\u306eopen',
   heartbeat: '\u6700\u5f8c\u306eheartbeat',
+  pong: '\u6700\u5f8c\u306epong',
+  serverTime: '\u30b5\u30fc\u30d0\u6642\u523b',
   message: '\u6700\u5f8c\u306e\u53d7\u4fe1',
   closed: '\u6700\u5f8c\u306eclose',
   error: '\u6700\u5f8c\u306eerror',
@@ -70,6 +72,8 @@ export default function WebSocketDiagnostics({ authStatus, authError, socketStat
         <DiagnosticRow label={TEXT.url} value={diagnostics.url} />
         <DiagnosticRow label={<><Clock size={13} /> {TEXT.opened}</>} value={formatTime(diagnostics.openedAt)} />
         <DiagnosticRow label={TEXT.heartbeat} value={formatTime(diagnostics.lastHeartbeatAt)} />
+        <DiagnosticRow label={TEXT.pong} value={formatTime(diagnostics.lastPongAt)} />
+        <DiagnosticRow label={TEXT.serverTime} value={formatTime(diagnostics.serverTime)} />
         <DiagnosticRow label={TEXT.message} value={formatTime(diagnostics.lastMessageAt)} />
         <DiagnosticRow label={TEXT.closed} value={formatTime(diagnostics.closedAt)} />
         <DiagnosticRow label={TEXT.error} value={formatTime(diagnostics.lastErrorAt)} />

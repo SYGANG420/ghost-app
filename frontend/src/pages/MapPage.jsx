@@ -43,6 +43,7 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
   const mapElementRef = useRef(null);
   const mapRef = useRef(null);
   const markerRefs = useRef({});
+  const trailRef = useRef(null);
   const [selected, setSelected] = useState(deviceShortId(deviceId));
   const [gpsPosition, setGpsPosition] = useState(null);
   const [gpsHistory, setGpsHistory] = useState([]);
@@ -129,6 +130,17 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map || gpsHistory.length < 2) return;
+    const points = gpsHistory.slice().reverse().map((item) => [item.lat, item.lon]);
+    if (!trailRef.current) {
+      trailRef.current = L.polyline(points, { color: '#00e5b4', weight: 3, opacity: 0.72 }).addTo(map);
+    } else {
+      trailRef.current.setLatLngs(points);
+    }
+  }, [gpsHistory]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!map || !peerPosition) return;
     if (!markerRefs.current.peer) markerRefs.current.peer = L.marker([peerPosition.lat, peerPosition.lon], { icon: createMarkerIcon('peer', peerId) }).addTo(map);
     markerRefs.current.peer.setIcon(createMarkerIcon('peer', peerId));
@@ -139,6 +151,7 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
     mapRef.current?.remove();
     mapRef.current = null;
     markerRefs.current = {};
+    trailRef.current = null;
   }, []);
 
   const devices = useMemo(() => [

@@ -21,16 +21,15 @@ def _device_key(device_id: str) -> str:
     return "A" if device_id == "device_a" else "B"
 
 
-@router.get("/actual")
-def get_actual_kpi(
-    current: Annotated[dict, Depends(get_current_device)],
+def _build_kpi(
+    current: dict,
     month: str | None = Query(default=None),
     commission_pool: float = Query(default=0, ge=0),
     role_reward_a: float = Query(default=0, ge=0),
     role_reward_b: float = Query(default=0, ge=0),
     delivery_fee_a: float = Query(default=0, ge=0),
     delivery_fee_b: float = Query(default=0, ge=0),
-):
+) -> dict:
     where = ""
     params: list[str] = []
     if month:
@@ -45,11 +44,13 @@ def get_actual_kpi(
     total_sales_count = len(sales_rows)
     sales_count = {"A": 0, "B": 0}
     revenue = gross = 0.0
+    delivery = {"A": 0.0, "B": 0.0}
     for row in sales_rows:
         key = _device_key(row["device_id"])
         sales_count[key] += row["quantity"]
         revenue += row["price"]
         gross += row["price"] - row["cost"] - row["expense"]
+        delivery[key] += row.get("delivery_fee", 0) or 0
 
     total_units = sales_count["A"] + sales_count["B"]
     operation_ratio_a = sales_count["A"] / total_units if total_units else 0.5
@@ -69,8 +70,8 @@ def get_actual_kpi(
     blend_b = operation_ratio_b * 0.4 + investment_ratio_b * 0.6
     commission_a = commission_pool * blend_a
     commission_b = commission_pool * blend_b
-    take_home_a = commission_a + role_reward_a + delivery_fee_a
-    take_home_b = commission_b + role_reward_b + delivery_fee_b
+    take_home_a = commission_a + role_reward_a + delivery_fee_a + delivery["A"]
+    take_home_b = commission_b + role_reward_b + delivery_fee_b + delivery["B"]
 
     return {
         "month": month,
@@ -86,8 +87,31 @@ def get_actual_kpi(
             "blend": {"A": blend_a, "B": blend_b},
         },
         "commission": {"A": commission_a, "B": commission_b, "pool": commission_pool},
+        "delivery": delivery,
         "take_home": {"A": take_home_a, "B": take_home_b},
     }
+
+
+@router.get("/actual")
+def get_actual_kpi(
+    current: Annotated[dict, Depends(get_current_device)],
+    month: str | None = Query(default=None),
+    commission_pool: float = Query(default=0, ge=0),
+    role_reward_a: float = Query(default=0, ge=0),
+    role_reward_b: float = Query(default=0, ge=0),
+    delivery_fee_a: float = Query(default=0, ge=0),
+    delivery_fee_b: float = Query(default=0, ge=0),
+):
+    return _build_kpi(current, month, commission_pool, role_reward_a, role_reward_b, delivery_fee_a, delivery_fee_b)
+
+
+@router.get("/summary")
+def get_kpi_summary(
+    current: Annotated[dict, Depends(get_current_device)],
+    month: str | None = Query(default=None),
+    commission_pool: float = Query(default=0, ge=0),
+):
+    return _build_kpi(current, month, commission_pool)
 
 
 @router.get("/investments")

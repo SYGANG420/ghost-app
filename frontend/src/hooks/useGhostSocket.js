@@ -9,6 +9,8 @@ const READY_STATE_LABELS = {
 };
 
 const RETRY_DELAY_MS = 10_000;
+const PING_INTERVAL_MS = 15_000;
+const PONG_STALE_MS = 35_000;
 
 function nowIso() {
   return new Date().toISOString();
@@ -24,6 +26,8 @@ function initialDiagnostics(token) {
     closedAt: '',
     lastMessageAt: '',
     lastHeartbeatAt: '',
+    lastPongAt: '',
+    serverTime: '',
     lastErrorAt: '',
     lastCloseCode: '',
     lastCloseReason: '',
@@ -39,6 +43,7 @@ export function useGhostSocket(deviceId, token) {
   const socketRef = useRef(null);
   const openedRef = useRef(false);
   const retryTimerRef = useRef(null);
+  const pingTimerRef = useRef(null);
   const [reconnectNonce, setReconnectNonce] = useState(0);
   const [state, setState] = useState('offline');
   const [lastMessage, setLastMessage] = useState(null);
@@ -75,6 +80,18 @@ export function useGhostSocket(deviceId, token) {
       }, RETRY_DELAY_MS);
     };
 
+    const sendPing = () => {
+      if (socketRef.current !== socket || socket.readyState !== WebSocket.OPEN) return;
+      socket.send(JSON.stringify({ type: 'ping', client_time: nowIso() }));
+      setDiagnostics((current) => {
+        const lastPongAt = current.lastPongAt ? new Date(current.lastPongAt).getTime() : 0;
+        if (lastPongAt && Date.now() - lastPongAt > PONG_STALE_MS) {
+          setState('error');
+        }
+        return current;
+      });
+    };
+
     setState('connecting');
     setDiagnostics({
       ...initialDiagnostics(token),
@@ -86,7 +103,7 @@ export function useGhostSocket(deviceId, token) {
     socket.addEventListener('open', () => {
       if (socketRef.current !== socket) return;
       openedRef.current = true;
-      setState('online');
+      setState('connecting');
       setDiagnostics((current) => ({
         ...current,
         readyState: socket.readyState,
@@ -98,11 +115,22 @@ export function useGhostSocket(deviceId, token) {
         lastCloseReason: '',
         nextRetryAt: '',
       }));
+      sendPing();
+      pingTimerRef.current = window.setInterval(sendPing, PING_INTERVAL_MS);
     });
     socket.addEventListener('message', (event) => {
       if (socketRef.current !== socket) return;
       try {
-        setLastMessage(JSON.parse(event.data));
+        const parsed = JSON.parse(event.data);
+        setLastMessage(parsed);
+        if (parsed.type === 'pong') {
+          setState('online');
+          setDiagnostics((current) => ({
+            ...current,
+            lastPongAt: nowIso(),
+            serverTime: parsed.server_time || '',
+          }));
+        }
       } catch {
         setLastMessage({ raw: event.data });
       }
@@ -116,6 +144,10 @@ export function useGhostSocket(deviceId, token) {
     socket.addEventListener('close', (event) => {
       if (socketRef.current !== socket) return;
       openedRef.current = false;
+      if (pingTimerRef.current) {
+        window.clearInterval(pingTimerRef.current);
+        pingTimerRef.current = null;
+      }
       setState('offline');
       setDiagnostics((current) => ({
         ...current,
@@ -145,6 +177,10 @@ export function useGhostSocket(deviceId, token) {
       if (retryTimerRef.current) {
         window.clearTimeout(retryTimerRef.current);
         retryTimerRef.current = null;
+      }
+      if (pingTimerRef.current) {
+        window.clearInterval(pingTimerRef.current);
+        pingTimerRef.current = null;
       }
       if (socketRef.current !== socket) return;
       socketRef.current = null;
