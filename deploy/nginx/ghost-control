@@ -57,7 +57,7 @@ server {
     }
 
     location /ws/ {
-        if ($http_origin != "https://ghost-control.duckdns.org") {
+        if ($http_origin !~* "^$|^https://ghost-control\.duckdns\.org$|^https?://89\.127\.235\.242$|^null$") {
             return 403;
         }
 

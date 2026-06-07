@@ -1,5 +1,12 @@
 import { apiFetch } from './client.js';
 
+export function getWipeConfirmToken(kind) {
+  return apiFetch('/wipe/confirm-token', {
+    method: 'POST',
+    body: { kind },
+  });
+}
+
 export function requestRemoteWipe(deviceId, payload = {}) {
   return apiFetch(`/wipe/${deviceId}`, {
     method: 'POST',

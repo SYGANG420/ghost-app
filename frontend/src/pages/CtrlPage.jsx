@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Lock, ServerCrash, ShieldAlert, Trash2 } from 'lucide-react';
 import WebSocketDiagnostics from '../components/WebSocketDiagnostics.jsx';
-import { requestRemoteWipe, requestVpsWipe, updateDeadManSwitch } from '../api/wipe.js';
+import { getWipeConfirmToken, requestRemoteWipe, requestVpsWipe, updateDeadManSwitch } from '../api/wipe.js';
 
 export default function CtrlPage({
   onLock,
@@ -21,6 +21,14 @@ export default function CtrlPage({
   const [lastAction, setLastAction] = useState('\u5f85\u6a5f\u4e2d');
   const isAdmin = deviceId === 'device_a';
 
+  const fetchConfirmToken = async (kind) => {
+    const payload = await getWipeConfirmToken(kind);
+    if (!payload?.confirmation_token) {
+      throw new Error('Confirmation token missing');
+    }
+    return payload.confirmation_token;
+  };
+
   const confirmAction = async (action) => {
     if (!isAdmin) return;
     const ok = window.confirm(`${action.label}\u3092\u5b9f\u884c\u3057\u307e\u3059\u3002\n\u5b9f\u884c\u8005: ${deviceId}\n\u5bfe\u8c61: ${action.target || action.kind}\n\u3088\u308d\u3057\u3044\u3067\u3059\u304b\uff1f`);
@@ -34,17 +42,26 @@ export default function CtrlPage({
       return;
     }
     try {
-      setLastAction('\u9001\u4fe1\u4e2d');
+      setLastAction('\u78ba\u8a8d\u30c8\u30fc\u30af\u30f3\u53d6\u5f97\u4e2d');
       if (action.kind === 'all') {
+        const [deviceToken, vpsToken] = await Promise.all([
+          fetchConfirmToken('device'),
+          fetchConfirmToken('vps'),
+        ]);
+        setLastAction('\u9001\u4fe1\u4e2d');
         await Promise.all([
-          requestRemoteWipe('device_a', { reason: 'all_wipe' }),
-          requestRemoteWipe('device_b', { reason: 'all_wipe' }),
-          requestVpsWipe({ reason: 'all_wipe' }),
+          requestRemoteWipe('device_a', { reason: 'all_wipe', confirmation_token: deviceToken }),
+          requestRemoteWipe('device_b', { reason: 'all_wipe', confirmation_token: deviceToken }),
+          requestVpsWipe({ reason: 'all_wipe', confirmation_token: vpsToken }),
         ]);
       } else if (action.kind === 'vps') {
-        await requestVpsWipe({ reason: action.label });
+        const confirmationToken = await fetchConfirmToken('vps');
+        setLastAction('\u9001\u4fe1\u4e2d');
+        await requestVpsWipe({ reason: action.label, confirmation_token: confirmationToken });
       } else {
-        await requestRemoteWipe(action.target, { reason: action.label });
+        const confirmationToken = await fetchConfirmToken('device');
+        setLastAction('\u9001\u4fe1\u4e2d');
+        await requestRemoteWipe(action.target, { reason: action.label, confirmation_token: confirmationToken });
       }
       setLastAction(`${action.label} \u30d5\u30e9\u30b0\u767b\u9332`);
     } catch (error) {

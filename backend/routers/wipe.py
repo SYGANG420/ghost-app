@@ -1,7 +1,7 @@
 import asyncio
 import json
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -32,6 +32,18 @@ class DeadmanPayload(BaseModel):
         extra = "forbid"
 
 
+class ConfirmTokenRequest(BaseModel):
+    kind: Literal["device", "vps"]
+
+    class Config:
+        extra = "forbid"
+
+
+class ConfirmTokenResponse(BaseModel):
+    confirmation_token: str
+    expires_in_seconds: int = 60
+
+
 def _write_wipe_audit(entry: dict) -> None:
     WIPE_AUDIT_LOG.parent.mkdir(parents=True, exist_ok=True)
     with WIPE_AUDIT_LOG.open("a", encoding="utf-8") as handle:
@@ -52,6 +64,12 @@ def check_wipe(current: Annotated[dict, Depends(get_current_device)]):
             ).fetchall()
         )
     return {"items": rows}
+
+
+@router.post("/confirm-token", response_model=ConfirmTokenResponse)
+def issue_wipe_confirm_token(payload: ConfirmTokenRequest, admin: Annotated[dict, Depends(require_admin)]):
+    token = VPS_CONFIRM_TOKEN if payload.kind == "vps" else WIPE_CONFIRM_TOKEN
+    return ConfirmTokenResponse(confirmation_token=token)
 
 
 @router.get("/{device_id}/status")
