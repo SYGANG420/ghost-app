@@ -1,4 +1,5 @@
 import os
+import sys
 import tempfile
 from pathlib import Path
 
@@ -6,6 +7,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT))
 TEST_DIR = Path(tempfile.mkdtemp(prefix="ghost-control-tests-"))
 os.environ["GHOST_DB_PATH"] = str(TEST_DIR / "ghost-test.db")
 os.environ["GHOST_DB_KEY"] = "test-db-key"
