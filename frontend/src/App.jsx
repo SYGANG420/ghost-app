@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import CalculatorDecoy from './components/CalculatorDecoy.jsx';
 import DeviceSetup from './components/DeviceSetup.jsx';
 import Header from './components/Header.jsx';
@@ -39,6 +39,7 @@ export default function App() {
   const [products, setProducts] = useState(() => loadStored(PRODUCTS_KEY, seedProducts));
   const [salesRecords, setSalesRecords] = useState(() => loadStored(SALES_KEY, seedSales));
   const [stockHistory, setStockHistory] = useState(() => loadStored(STOCK_HISTORY_KEY, []) || []);
+  const authCloseRefreshRef = useRef('');
   const auth = useDeviceAuth();
   const socket = useGhostSocket(auth.deviceId, auth.token);
   const monthlyProfit = salesRecords.reduce((sum, item) => sum + item.grossProfit, 0);
@@ -61,6 +62,16 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(STOCK_HISTORY_KEY, JSON.stringify(stockHistory));
   }, [stockHistory]);
+
+  useEffect(() => {
+    const code = Number(socket.diagnostics.lastCloseCode);
+    const key = `${socket.diagnostics.closedAt}-${code}`;
+    if (!key || authCloseRefreshRef.current === key) return;
+    if ([1006, 1008, 1011].includes(code)) {
+      authCloseRefreshRef.current = key;
+      auth.refreshToken();
+    }
+  }, [auth.refreshToken, socket.diagnostics.closedAt, socket.diagnostics.lastCloseCode]);
 
   useEffect(() => {
     const handleUpdate = () => notify('\u65b0\u3057\u3044\u30d0\u30fc\u30b8\u30e7\u30f3\u304c\u914d\u4fe1\u3055\u308c\u307e\u3057\u305f\u3002\u518d\u8d77\u52d5\u3059\u308b\u3068\u53cd\u6620\u3055\u308c\u307e\u3059', 'info', 'pwa-update');

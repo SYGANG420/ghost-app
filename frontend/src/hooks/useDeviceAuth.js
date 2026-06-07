@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { requestDeviceToken } from '../api/auth.js';
 
 const DEVICE_KEY = 'ghost_control_device_id';
@@ -9,6 +9,7 @@ export function useDeviceAuth() {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || '');
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
+  const bootRefreshRef = useRef(false);
 
   const hasDevice = Boolean(deviceId);
 
@@ -47,7 +48,13 @@ export function useDeviceAuth() {
   }, [deviceId, issueToken]);
 
   useEffect(() => {
-    if (deviceId && (!token || token.startsWith('dev.'))) {
+    if (!deviceId) return;
+    if (!bootRefreshRef.current) {
+      bootRefreshRef.current = true;
+      issueToken(deviceId);
+      return;
+    }
+    if (!token || token.startsWith('dev.')) {
       issueToken(deviceId);
     }
   }, [deviceId, issueToken, token]);
