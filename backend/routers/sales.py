@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from backend.auth import get_current_device
@@ -16,6 +16,9 @@ class SaleCreate(BaseModel):
     price: float = Field(ge=0)
     cost: float = Field(default=0, ge=0)
     expense: float = Field(default=0, ge=0)
+    delivery_fee: float = Field(default=0, ge=0)
+    staff: str | None = None
+    sale_date: str | None = None
     memo: str | None = None
 
 
@@ -39,14 +42,27 @@ def _update_stock_alert(db, stock_item_id: int) -> dict | None:
     return item
 
 
+def _adjust_stock(db, stock_item_id: int | None, delta: int) -> dict | None:
+    if stock_item_id is None or delta == 0:
+        return None
+    row = db.execute("SELECT * FROM stock WHERE id = ?", (stock_item_id,)).fetchone()
+    if row is None:
+        return None
+    db.execute(
+        "UPDATE stock SET quantity = quantity + ?, updated_at = ? WHERE id = ?",
+        (delta, utc_now_iso(), stock_item_id),
+    )
+    return _update_stock_alert(db, stock_item_id)
+
+
 @router.post("/sales")
 async def create_sale(payload: SaleCreate, current: Annotated[dict, Depends(get_current_device)]):
     now = utc_now_iso()
     with get_db() as db:
         cursor = db.execute(
             """
-            INSERT INTO sales (device_id, stock_item_id, quantity, price, cost, expense, memo, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO sales (device_id, stock_item_id, quantity, price, cost, expense, delivery_fee, staff, sale_date, memo, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 current["device_id"],
@@ -55,18 +71,16 @@ async def create_sale(payload: SaleCreate, current: Annotated[dict, Depends(get_
                 payload.price,
                 payload.cost,
                 payload.expense,
+                payload.delivery_fee,
+                payload.staff,
+                payload.sale_date or now[:10],
                 payload.memo,
+                now,
                 now,
             ),
         )
         sale_id = cursor.lastrowid
-        stock_item = None
-        if payload.stock_item_id is not None:
-            db.execute(
-                "UPDATE stock SET quantity = quantity - ?, updated_at = ? WHERE id = ?",
-                (payload.quantity, now, payload.stock_item_id),
-            )
-            stock_item = _update_stock_alert(db, payload.stock_item_id)
+        stock_item = _adjust_stock(db, payload.stock_item_id, -payload.quantity)
         sale = row_to_dict(db.execute("SELECT * FROM sales WHERE id = ?", (sale_id,)).fetchone())
 
     if stock_item and stock_item["alert_flag"]:
@@ -74,6 +88,58 @@ async def create_sale(payload: SaleCreate, current: Annotated[dict, Depends(get_
 
     await manager.broadcast({"type": "sale_created", "sale": sale})
     return {"sale": sale, "stock": stock_item}
+
+
+@router.patch("/sales/{sale_id}")
+async def update_sale(sale_id: int, payload: SaleCreate, current: Annotated[dict, Depends(get_current_device)]):
+    now = utc_now_iso()
+    with get_db() as db:
+        existing = db.execute("SELECT * FROM sales WHERE id = ?", (sale_id,)).fetchone()
+        if existing is None:
+            raise HTTPException(status_code=404, detail="Sale not found")
+
+        _adjust_stock(db, existing["stock_item_id"], existing["quantity"])
+        db.execute(
+            """
+            UPDATE sales
+            SET stock_item_id = ?, quantity = ?, price = ?, cost = ?, expense = ?,
+                delivery_fee = ?, staff = ?, sale_date = ?, memo = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (
+                payload.stock_item_id,
+                payload.quantity,
+                payload.price,
+                payload.cost,
+                payload.expense,
+                payload.delivery_fee,
+                payload.staff,
+                payload.sale_date or existing["sale_date"] or now[:10],
+                payload.memo,
+                now,
+                sale_id,
+            ),
+        )
+        stock_item = _adjust_stock(db, payload.stock_item_id, -payload.quantity)
+        sale = row_to_dict(db.execute("SELECT * FROM sales WHERE id = ?", (sale_id,)).fetchone())
+
+    if stock_item and stock_item["alert_flag"]:
+        await manager.broadcast({"type": "stock_alert", "item": stock_item})
+    await manager.broadcast({"type": "sale_updated", "sale": sale})
+    return {"sale": sale, "stock": stock_item}
+
+
+@router.delete("/sales/{sale_id}")
+async def delete_sale(sale_id: int, current: Annotated[dict, Depends(get_current_device)]):
+    with get_db() as db:
+        existing = db.execute("SELECT * FROM sales WHERE id = ?", (sale_id,)).fetchone()
+        if existing is None:
+            raise HTTPException(status_code=404, detail="Sale not found")
+        stock_item = _adjust_stock(db, existing["stock_item_id"], existing["quantity"])
+        db.execute("DELETE FROM sales WHERE id = ?", (sale_id,))
+
+    await manager.broadcast({"type": "sale_deleted", "sale_id": sale_id, "stock": stock_item})
+    return {"ok": True, "stock": stock_item}
 
 
 @router.get("/sales")
@@ -84,7 +150,7 @@ def list_sales(
     where = ""
     params: list[str] = []
     if month:
-        where = "WHERE substr(created_at, 1, 7) = ?"
+        where = "WHERE substr(COALESCE(sale_date, created_at), 1, 7) = ?"
         params.append(month)
 
     with get_db() as db:

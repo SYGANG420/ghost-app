@@ -67,6 +67,15 @@ def rows_to_dicts(rows: list[sqlite3.Row]) -> list[dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
+def _table_columns(db: Any, table: str) -> set[str]:
+    return {row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()}
+
+
+def _ensure_column(db: Any, table: str, column: str, definition: str) -> None:
+    if column not in _table_columns(db, table):
+        db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
 def init_db() -> None:
     with get_db() as db:
         db.executescript(
@@ -98,6 +107,7 @@ def init_db() -> None:
                 quantity INTEGER NOT NULL DEFAULT 0,
                 threshold INTEGER NOT NULL DEFAULT 0,
                 purchase_price REAL NOT NULL DEFAULT 0,
+                retail_price REAL NOT NULL DEFAULT 0,
                 alert_flag INTEGER NOT NULL DEFAULT 0,
                 updated_at TEXT NOT NULL
             );
@@ -130,8 +140,29 @@ def init_db() -> None:
                 created_at TEXT NOT NULL,
                 acknowledged_at TEXT
             );
+
+            CREATE TABLE IF NOT EXISTS stock_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                stock_item_id INTEGER,
+                action TEXT NOT NULL,
+                quantity INTEGER NOT NULL DEFAULT 0,
+                memo TEXT,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS deadman_settings (
+                device_id TEXT PRIMARY KEY,
+                enabled INTEGER NOT NULL DEFAULT 0,
+                hours INTEGER NOT NULL DEFAULT 72,
+                updated_at TEXT NOT NULL
+            );
             """
         )
+        _ensure_column(db, "stock", "retail_price", "REAL NOT NULL DEFAULT 0")
+        _ensure_column(db, "sales", "delivery_fee", "REAL NOT NULL DEFAULT 0")
+        _ensure_column(db, "sales", "staff", "TEXT")
+        _ensure_column(db, "sales", "sale_date", "TEXT")
+        _ensure_column(db, "sales", "updated_at", "TEXT")
 
 
 class WebSocketManager:

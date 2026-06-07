@@ -4,35 +4,26 @@ import { yen } from '../utils/format.js';
 
 const emptyProduct = { name: '', purchasePrice: 0, retailPrice: 0, threshold: 3, quantity: 0 };
 
-export default function StockPage({ products, setProducts, stockHistory, setStockHistory }) {
+export default function StockPage({ products, stockHistory, onSaveProduct, onDeleteProduct, onRestockProduct, onInventoryProduct }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [draft, setDraft] = useState(emptyProduct);
   const [editingId, setEditingId] = useState(null);
   const [restock, setRestock] = useState({});
-
-  const addHistory = (type, productName, quantity = 0) => {
-    setStockHistory((current) => [{ id: Date.now(), date: new Date().toISOString(), type, productName, quantity }, ...current].slice(0, 30));
-  };
+  const [inventory, setInventory] = useState({});
+  const sortedProducts = [...products].sort((a, b) => Number(b.quantity <= b.threshold) - Number(a.quantity <= a.threshold));
 
   const addProduct = (event) => {
     event.preventDefault();
     if (editingId) {
-      setProducts((current) =>
-        current.map((item) =>
-          item.id === editingId
-            ? {
-                ...item,
-                code: draft.name.slice(0, 1).toUpperCase() || item.code || 'N',
-                name: draft.name || item.name,
-                quantity: Number(draft.quantity) || 0,
-                threshold: Number(draft.threshold) || 0,
-                purchasePrice: Number(draft.purchasePrice) || 0,
-                retailPrice: Number(draft.retailPrice) || 0,
-              }
-            : item
-        )
-      );
-      addHistory('\u7de8\u96c6', draft.name || '\u5546\u54c1', 0);
+      onSaveProduct({
+        id: editingId,
+        code: draft.name.slice(0, 1).toUpperCase() || 'N',
+        name: draft.name || '\u5546\u54c1',
+        quantity: Number(draft.quantity) || 0,
+        threshold: Number(draft.threshold) || 0,
+        purchasePrice: Number(draft.purchasePrice) || 0,
+        retailPrice: Number(draft.retailPrice) || 0,
+      }, true);
       setEditingId(null);
       setDraft(emptyProduct);
       setModalOpen(false);
@@ -47,8 +38,7 @@ export default function StockPage({ products, setProducts, stockHistory, setStoc
       purchasePrice: Number(draft.purchasePrice) || 0,
       retailPrice: Number(draft.retailPrice) || 0,
     };
-    setProducts((current) => [nextProduct, ...current]);
-    addHistory('\u767b\u9332', nextProduct.name, nextProduct.quantity);
+    onSaveProduct(nextProduct, false);
     setDraft(emptyProduct);
     setModalOpen(false);
   };
@@ -72,18 +62,14 @@ export default function StockPage({ products, setProducts, stockHistory, setStoc
   };
 
   const deleteProduct = (item) => {
-    const ok = window.confirm(`${item.name}\u3092\u524a\u9664\u3057\u307e\u3059\u304b\uff1f`);
-    if (!ok) return;
-    setProducts((current) => current.filter((product) => product.id !== item.id));
-    addHistory('\u524a\u9664', item.name, item.quantity);
+    onDeleteProduct(item);
   };
 
   const restockProduct = (id) => {
     const quantity = Number(restock[id]) || 0;
     if (quantity <= 0) return;
     const product = products.find((item) => item.id === id);
-    setProducts((current) => current.map((item) => (item.id === id ? { ...item, quantity: item.quantity + quantity } : item)));
-    addHistory('\u88dc\u5145', product?.name || id, quantity);
+    if (product) onRestockProduct(product, quantity);
     setRestock((current) => ({ ...current, [id]: '' }));
   };
 
@@ -97,7 +83,7 @@ export default function StockPage({ products, setProducts, stockHistory, setStoc
         <button type="button" onClick={openAddModal}><PackagePlus size={16} /> &#x5546;&#x54c1;&#x767b;&#x9332;</button>
       </div>
 
-      {products.map((item) => {
+      {sortedProducts.map((item) => {
         const alert = item.quantity <= item.threshold;
         return (
           <div className={alert ? 'stock-card alert' : 'stock-card'} key={item.id}>
@@ -119,6 +105,14 @@ export default function StockPage({ products, setProducts, stockHistory, setStoc
               <button className="stock-action-button" type="button" onClick={() => restockProduct(item.id)}><Plus size={14} /> &#x88dc;&#x5145;</button>
               <button className="stock-action-button" type="button" onClick={() => openEditModal(item)}><Edit3 size={14} /> &#x7de8;&#x96c6;</button>
               <button className="stock-action-button danger-button" type="button" onClick={() => deleteProduct(item)}><Trash2 size={14} /> &#x524a;&#x9664;</button>
+            </div>
+            <div className="stock-inputs">
+              <label>&#x68da;&#x5378;&#x6570;<input type="number" value={inventory[item.id] || ''} onChange={(event) => setInventory((current) => ({ ...current, [item.id]: event.target.value }))} /></label>
+              <button className="stock-action-button" type="button" onClick={() => {
+                const quantity = Number(inventory[item.id]);
+                if (Number.isFinite(quantity)) onInventoryProduct(item, quantity);
+                setInventory((current) => ({ ...current, [item.id]: '' }));
+              }}>&#x68da;&#x5378;</button>
             </div>
           </div>
         );

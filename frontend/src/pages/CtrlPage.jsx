@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Lock, ServerCrash, ShieldAlert, Trash2 } from 'lucide-react';
 import WebSocketDiagnostics from '../components/WebSocketDiagnostics.jsx';
-import { requestRemoteWipe, requestVpsWipe } from '../api/wipe.js';
+import { requestRemoteWipe, requestVpsWipe, updateDeadManSwitch } from '../api/wipe.js';
 
 export default function CtrlPage({
   onLock,
@@ -14,6 +14,7 @@ export default function CtrlPage({
   onReconnectSocket,
   onExportData,
   onResetLocalData,
+  onResetDevice,
 }) {
   const [deadmanEnabled, setDeadmanEnabled] = useState(false);
   const [deadmanHours, setDeadmanHours] = useState(72);
@@ -22,7 +23,7 @@ export default function CtrlPage({
 
   const confirmAction = async (action) => {
     if (!isAdmin) return;
-    const ok = window.confirm(`${action.label}\u3092\u5b9f\u884c\u3057\u307e\u3059\u3002\u3088\u308d\u3057\u3044\u3067\u3059\u304b\uff1f`);
+    const ok = window.confirm(`${action.label}\u3092\u5b9f\u884c\u3057\u307e\u3059\u3002\n\u5b9f\u884c\u8005: ${deviceId}\n\u5bfe\u8c61: ${action.target || action.kind}\n\u3088\u308d\u3057\u3044\u3067\u3059\u304b\uff1f`);
     if (!ok) {
       setLastAction('\u30ad\u30e3\u30f3\u30bb\u30eb');
       return;
@@ -58,6 +59,18 @@ export default function CtrlPage({
     { label: 'VPS\u6d88\u53bb', icon: ServerCrash, kind: 'vps' },
     { label: '\u5168\u6d88\u53bb', icon: Trash2, kind: 'all' },
   ];
+
+  const saveDeadman = async (enabled, hours = deadmanHours) => {
+    setDeadmanEnabled(enabled);
+    setDeadmanHours(hours);
+    try {
+      await updateDeadManSwitch(deviceId, { enabled, hours });
+      setLastAction('\u30c7\u30c3\u30c9\u30de\u30f3\u8a2d\u5b9a\u4fdd\u5b58');
+    } catch (error) {
+      console.log('[GHOST CTRL] Deadman save failed', error);
+      setLastAction('\u30c7\u30c3\u30c9\u30de\u30f3\u4fdd\u5b58\u5931\u6557');
+    }
+  };
 
   return (
     <section className="page-stack">
@@ -99,13 +112,13 @@ export default function CtrlPage({
         <div className="panel-title-row">
           <h2>&#x30c7;&#x30c3;&#x30c9;&#x30de;&#x30f3;&#x30ba;&#x30b9;&#x30a4;&#x30c3;&#x30c1;</h2>
           <label className="toggle-row">
-            <input type="checkbox" checked={deadmanEnabled} onChange={(event) => setDeadmanEnabled(event.target.checked)} />
+            <input type="checkbox" checked={deadmanEnabled} onChange={(event) => saveDeadman(event.target.checked)} />
             {deadmanEnabled ? 'ON' : 'OFF'}
           </label>
         </div>
         <div className="segmented-row">
           {[24, 48, 72].map((hours) => (
-            <button className={deadmanHours === hours ? 'active' : ''} key={hours} type="button" onClick={() => setDeadmanHours(hours)}>
+            <button className={deadmanHours === hours ? 'active' : ''} key={hours} type="button" onClick={() => saveDeadman(deadmanEnabled, hours)}>
               {hours}&#x6642;&#x9593;
             </button>
           ))}
@@ -126,6 +139,7 @@ export default function CtrlPage({
         <div className="button-row">
           <button type="button" onClick={onExportData}>&#x30a8;&#x30af;&#x30b9;&#x30dd;&#x30fc;&#x30c8;</button>
           <button className="danger-button" type="button" onClick={onResetLocalData}>&#x7aef;&#x672b;&#x30c7;&#x30fc;&#x30bf;&#x521d;&#x671f;&#x5316;</button>
+          <button type="button" onClick={onResetDevice}>&#x7aef;&#x672b;&#x8a2d;&#x5b9a;&#x3092;&#x518d;&#x9078;&#x629e;</button>
         </div>
       </div>
     </section>

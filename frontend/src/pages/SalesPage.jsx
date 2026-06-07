@@ -6,7 +6,7 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function SalesPage({ deviceId, products, setProducts, salesRecords, setSalesRecords, selectedMonth, setSelectedMonth }) {
+export default function SalesPage({ deviceId, products, salesRecords, selectedMonth, setSelectedMonth, onSaveSale, onDeleteSale, saving }) {
   const [draft, setDraft] = useState({
     date: today(),
     productId: '',
@@ -17,8 +17,10 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
     salePrice: '',
   });
   const [editingId, setEditingId] = useState(null);
+  const [staffFilter, setStaffFilter] = useState('');
+  const [productFilter, setProductFilter] = useState('');
 
-  const selectedProduct = products.find((item) => item.id === draft.productId);
+  const selectedProduct = products.find((item) => String(item.id) === String(draft.productId));
   const editingSale = salesRecords.find((item) => item.id === editingId);
   const quantity = Math.max(Number(draft.quantity) || 1, 1);
   const purchasePrice = selectedProduct?.purchasePrice || 0;
@@ -28,11 +30,15 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
   const productGrossProfit = selectedProduct ? revenue - purchasePrice * quantity : 0;
   const totalProfit = productGrossProfit + deliveryFee;
   const availableQuantity = selectedProduct
-    ? selectedProduct.quantity + (editingSale?.productId === selectedProduct.id ? editingSale.quantity : 0)
+    ? selectedProduct.quantity + (String(editingSale?.productId) === String(selectedProduct.id) ? editingSale.quantity : 0)
     : 0;
   const insufficient = selectedProduct ? quantity > availableQuantity : true;
   const formReady = Boolean(draft.date && draft.staff && selectedProduct && salePrice > 0 && !insufficient);
-  const filteredRecords = salesRecords.filter((item) => String(item.date || '').startsWith(selectedMonth));
+  const filteredRecords = salesRecords.filter((item) => (
+    String(item.date || '').startsWith(selectedMonth)
+    && (!staffFilter || item.staff === staffFilter)
+    && (!productFilter || String(item.productId) === String(productFilter))
+  ));
   const monthlyTotal = filteredRecords.reduce((sum, item) => sum + item.revenue, 0);
 
   const updateQuantity = (next) => {
@@ -41,6 +47,35 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
 
   const selectProduct = (productId) => {
     setDraft((current) => ({ ...current, productId }));
+  };
+
+  const applyKey = (key) => {
+    setDraft((current) => {
+      if (key === 'clear') return { ...current, salePrice: '' };
+      if (key === 'back') return { ...current, salePrice: String(current.salePrice).slice(0, -1) };
+      return { ...current, salePrice: `${current.salePrice}${key}` };
+    });
+  };
+
+  const exportCsv = () => {
+    const rows = [['date', 'product', 'staff', 'quantity', 'revenue', 'gross_profit', 'delivery_fee'], ...filteredRecords.map((item) => [
+      item.date,
+      item.productName,
+      item.staff,
+      item.quantity,
+      item.revenue,
+      item.grossProfit,
+      item.deliveryFee,
+    ])];
+    const blob = new Blob([rows.map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `sales-${selectedMonth}.csv`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
   };
 
   const registerSale = (event) => {
@@ -63,18 +98,9 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
       grossProfit: productGrossProfit,
     };
 
-    setSalesRecords((current) => {
-      if (editingId) return current.map((item) => (item.id === editingId ? sale : item));
-      return [sale, ...current];
-    });
-    setProducts((current) =>
-      current.map((item) => {
-        let nextQuantity = item.quantity;
-        if (editingSale && item.id === editingSale.productId) nextQuantity += editingSale.quantity;
-        if (item.id === selectedProduct.id) nextQuantity -= quantity;
-        return { ...item, quantity: nextQuantity };
-      })
-    );
+    const ok = window.confirm(`\u767b\u9332\u5185\u5bb9\n${sale.productName} / ${quantity}\u70b9\n\u58f2\u4e0a ${yen(revenue)}\n\u7c97\u5229 ${yen(productGrossProfit)}\n\u914d\u9054 ${yen(deliveryFee)}`);
+    if (!ok) return;
+    onSaveSale(sale, Boolean(editingId), editingSale);
     setEditingId(null);
     setDraft({ date: today(), productId: '', quantity: 1, staff: '', delivery: false, deliveryFee: 0, salePrice: '' });
   };
@@ -93,10 +119,7 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
   };
 
   const deleteSale = (sale) => {
-    const ok = window.confirm('\u3053\u306e\u58f2\u4e0a\u5c65\u6b74\u3092\u524a\u9664\u3057\u307e\u3059\u304b\uff1f');
-    if (!ok) return;
-    setSalesRecords((current) => current.filter((item) => item.id !== sale.id));
-    setProducts((current) => current.map((item) => (item.id === sale.productId ? { ...item, quantity: item.quantity + sale.quantity } : item)));
+    onDeleteSale(sale);
   };
 
   return (
@@ -113,6 +136,21 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
         <div className="metric-card">
           <span>&#x8868;&#x793a;&#x6708;</span>
           <strong>{selectedMonth}</strong>
+        </div>
+      </div>
+      <div className="wide-panel compact-form">
+        <h2>&#x5c65;&#x6b74;&#x30d5;&#x30a3;&#x30eb;&#x30bf;&#x30fc;</h2>
+        <div className="button-row">
+          <select value={staffFilter} onChange={(event) => setStaffFilter(event.target.value)}>
+            <option value="">&#x5168;&#x62c5;&#x5f53;</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+          </select>
+          <select value={productFilter} onChange={(event) => setProductFilter(event.target.value)}>
+            <option value="">&#x5168;&#x5546;&#x54c1;</option>
+            {products.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <button type="button" onClick={exportCsv}>CSV</button>
         </div>
       </div>
 
@@ -160,6 +198,18 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
           &#x8ca9;&#x58f2;&#x4fa1;&#x683c;
           <input placeholder="0" type="number" value={draft.salePrice} onChange={(event) => setDraft((current) => ({ ...current, salePrice: event.target.value }))} />
         </label>
+        {selectedProduct && (
+          <div className="button-row">
+            <button type="button" onClick={() => setDraft((current) => ({ ...current, salePrice: String(selectedProduct.retailPrice || '') }))}>&#x5c0f;&#x58f2; {yen(selectedProduct.retailPrice)}</button>
+            <button type="button" onClick={() => setDraft((current) => ({ ...current, salePrice: String(Math.round((selectedProduct.retailPrice || 0) * 0.95)) }))}>95%</button>
+            <button type="button" onClick={() => setDraft((current) => ({ ...current, salePrice: String(Math.round((selectedProduct.retailPrice || 0) * 1.05)) }))}>105%</button>
+          </div>
+        )}
+        <div className="keypad-grid">
+          {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'back'].map((key) => (
+            <button key={key} type="button" onClick={() => applyKey(key)}>{key === 'clear' ? 'C' : key === 'back' ? '\u232b' : key}</button>
+          ))}
+        </div>
 
         <div className="readonly-row">
           <span>&#x5546;&#x54c1;&#x30de;&#x30b9;&#x30bf;&#x4ed5;&#x5165;&#x308c;&#x4fa1;&#x683c;</span>
@@ -190,7 +240,7 @@ export default function SalesPage({ deviceId, products, setProducts, salesRecord
           <span>&#x5546;&#x54c1;&#x7c97;&#x5229; {yen(productGrossProfit)} / &#x914d;&#x9054;&#x6599; {yen(deliveryFee)} / &#x5408;&#x8a08; {yen(totalProfit)}</span>
         </div>
 
-        <button type="submit" disabled={!formReady}>
+        <button type="submit" disabled={!formReady || saving}>
           <Save size={16} /> {editingId ? '\u4fee\u6b63' : '\u767b\u9332'}
         </button>
         {editingId && (
