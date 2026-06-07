@@ -1,4 +1,10 @@
-from jose import jwt
+import base64
+import json
+
+
+def b64url(payload: dict) -> str:
+    raw = json.dumps(payload, separators=(",", ":")).encode()
+    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
 
 
 def test_device_a_can_get_jwt(client):
@@ -30,6 +36,6 @@ def test_missing_jwt_returns_401(client):
 
 
 def test_none_algorithm_jwt_is_rejected(client):
-    token = jwt.encode({"sub": "device_a", "role": "ADMIN"}, "", algorithm="none")
+    token = f"{b64url({'alg': 'none', 'typ': 'JWT'})}.{b64url({'sub': 'device_a', 'role': 'ADMIN'})}."
     response = client.get("/api/stock", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 401
