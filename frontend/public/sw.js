@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ghost-control-v3';
+const CACHE_NAME = 'ghost-control-v4';
 const APP_SHELL = ['/', '/index.html', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
