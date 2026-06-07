@@ -8,13 +8,10 @@ test('GHOST CONTROL full screen flow', async ({ page }) => {
     await page.getByRole('button', { name: key }).click();
   }
 
-  await expect(page.getByText('GHOST CONTROL')).toBeVisible();
-  const deviceA = page.getByRole('button', { name: /device_a|端末A|A/ }).first();
-  if (await deviceA.isVisible().catch(() => false)) {
-    await deviceA.click();
-  }
+  await expect(page.getByText('端末初期設定')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole('button', { name: '端末A' }).click();
 
-  await expect(page.getByText(/HOME|ダッシュボード|今月/)).toBeVisible();
+  await expect(page.getByText(/HOME|ダッシュボード|今月/)).toBeVisible({ timeout: 15_000 });
   await page.getByText('MAP').click();
   await expect(page.locator('.leaflet-container')).toBeVisible();
 
