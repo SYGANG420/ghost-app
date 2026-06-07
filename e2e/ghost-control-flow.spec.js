@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('GHOST CONTROL full screen flow', async ({ page }) => {
   await page.goto('https://ghost-control.duckdns.org');
+  await page.addStyleTag({ content: '.notification-stack { display: none !important; }' });
 
   await expect(page.getByRole('button', { name: '1' })).toBeVisible();
   for (const key of ['1', '9', '8', '4', '=']) {
