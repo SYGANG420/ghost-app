@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import CalculatorDecoy from '../components/CalculatorDecoy.jsx';
 
@@ -21,7 +21,7 @@ describe('CalculatorDecoy', () => {
     press('+');
     press('2');
     press('=');
-    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(within(document.querySelector('.calc-display')).getByText('3')).toBeInTheDocument();
   });
 
   it('1984=でGHOST CONTROLが起動する', () => {
