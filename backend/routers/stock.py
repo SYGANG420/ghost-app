@@ -11,24 +11,24 @@ router = APIRouter(prefix="/api/stock", tags=["stock"])
 
 
 class StockItemCreate(BaseModel):
-    name: str
-    quantity: int = 0
-    threshold: int = 0
-    purchase_price: float = 0
-    retail_price: float = 0
+    name: str = Field(min_length=1, max_length=80)
+    quantity: int = Field(default=0, ge=-100000, le=100000)
+    threshold: int = Field(default=0, ge=0, le=100000)
+    purchase_price: float = Field(default=0, ge=0, le=100000000)
+    retail_price: float = Field(default=0, ge=0, le=100000000)
 
 
 class RestockCreate(BaseModel):
     stock_item_id: int
-    quantity: int = Field(gt=0)
-    purchase_price: float | None = None
-    memo: str | None = None
+    quantity: int = Field(gt=0, le=100000)
+    purchase_price: float | None = Field(default=None, ge=0, le=100000000)
+    memo: str | None = Field(default=None, max_length=200)
 
 
 class InventoryAdjust(BaseModel):
     stock_item_id: int
-    quantity: int = Field(ge=0)
-    memo: str | None = None
+    quantity: int = Field(ge=0, le=100000)
+    memo: str | None = Field(default=None, max_length=200)
 
 
 def _alert_flag(quantity: int, threshold: int) -> int:

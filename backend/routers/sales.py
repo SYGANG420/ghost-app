@@ -12,21 +12,21 @@ router = APIRouter(prefix="/api", tags=["sales"])
 
 class SaleCreate(BaseModel):
     stock_item_id: int | None = None
-    quantity: int = Field(default=1, ge=1)
-    price: float = Field(ge=0)
-    cost: float = Field(default=0, ge=0)
-    expense: float = Field(default=0, ge=0)
-    delivery_fee: float = Field(default=0, ge=0)
-    staff: str | None = None
-    sale_date: str | None = None
-    memo: str | None = None
+    quantity: int = Field(default=1, ge=1, le=100000)
+    price: float = Field(ge=0, le=100000000)
+    cost: float = Field(default=0, ge=0, le=100000000)
+    expense: float = Field(default=0, ge=0, le=100000000)
+    delivery_fee: float = Field(default=0, ge=0, le=100000000)
+    staff: str | None = Field(default=None, max_length=1)
+    sale_date: str | None = Field(default=None, max_length=10)
+    memo: str | None = Field(default=None, max_length=200)
 
 
 class ExpenseCreate(BaseModel):
-    amount: float = Field(ge=0)
-    category: str = "general"
-    memo: str | None = None
-    created_at: str | None = None
+    amount: float = Field(ge=0, le=100000000)
+    category: str = Field(default="general", max_length=60)
+    memo: str | None = Field(default=None, max_length=200)
+    created_at: str | None = Field(default=None, max_length=40)
 
 
 def _update_stock_alert(db, stock_item_id: int) -> dict | None:

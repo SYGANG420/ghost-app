@@ -4,9 +4,9 @@ After=network.target
 
 [Service]
 WorkingDirectory=/opt/ghost-app/ghost-app
-Environment=GHOST_DB_KEY=CHANGE_ME
-Environment=JWT_SECRET=CHANGE_ME
-ExecStart=/opt/ghost-app/ghost-app/venv/bin/uvicorn backend.main:app --host 0.0.0.0 --port 8000
+EnvironmentFile=/opt/ghost-app/ghost-app/.env
+Environment=JWT_ALGORITHM=RS256
+ExecStart=/opt/ghost-app/ghost-app/venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8000 --log-level warning
 Restart=always
 
 [Install]

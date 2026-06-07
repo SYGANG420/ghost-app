@@ -11,10 +11,10 @@ router = APIRouter(prefix="/api/kpi", tags=["kpi"])
 
 
 class InvestmentCreate(BaseModel):
-    investor: str
-    amount: float = Field(gt=0)
-    memo: str | None = None
-    created_at: str | None = None
+    investor: str = Field(min_length=1, max_length=1)
+    amount: float = Field(gt=0, le=1000000000)
+    memo: str | None = Field(default=None, max_length=200)
+    created_at: str | None = Field(default=None, max_length=40)
 
 
 def _device_key(device_id: str) -> str:

@@ -1,22 +1,41 @@
+import asyncio
+import json
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.auth import get_current_device, require_admin
 from backend.database import get_db, manager, row_to_dict, rows_to_dicts, utc_now_iso
 
 
 router = APIRouter(prefix="/api/wipe", tags=["wipe"])
+WIPE_CONFIRM_TOKEN = "CONFIRM_WIPE"
+VPS_CONFIRM_TOKEN = "CONFIRM_VPS"
+WIPE_AUDIT_LOG = Path("/opt/ghost-app/ghost-app/data/wipe_audit.log")
 
 
 class WipePayload(BaseModel):
-    reason: str | None = None
+    reason: str | None = Field(default=None, max_length=200)
+    confirmation_token: str | None = Field(default=None, max_length=80)
+
+    class Config:
+        extra = "forbid"
 
 
 class DeadmanPayload(BaseModel):
     enabled: bool
-    hours: int = 72
+    hours: int = Field(default=72, ge=24, le=72)
+
+    class Config:
+        extra = "forbid"
+
+
+def _write_wipe_audit(entry: dict) -> None:
+    WIPE_AUDIT_LOG.parent.mkdir(parents=True, exist_ok=True)
+    with WIPE_AUDIT_LOG.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
 @router.get("/check")
@@ -86,6 +105,9 @@ def update_deadman(device_id: str, payload: DeadmanPayload, current: Annotated[d
 
 @router.post("/vps")
 async def request_vps_self_destruct(payload: WipePayload, admin: Annotated[dict, Depends(require_admin)]):
+    if payload.confirmation_token != VPS_CONFIRM_TOKEN:
+        raise HTTPException(status_code=400, detail="Confirmation token required")
+    await asyncio.sleep(5)
     with get_db() as db:
         cursor = db.execute(
             """
@@ -96,12 +118,24 @@ async def request_vps_self_destruct(payload: WipePayload, admin: Annotated[dict,
         )
         command = row_to_dict(db.execute("SELECT * FROM wipe_commands WHERE id = ?", (cursor.lastrowid,)).fetchone())
 
+    _write_wipe_audit({
+        "type": "vps_self_destruct",
+        "requested_by": admin["device_id"],
+        "reason": payload.reason,
+        "created_at": command["created_at"],
+        "command_id": command["id"],
+    })
     await manager.broadcast({"type": "vps_self_destruct_flag", "command": command, "reason": payload.reason})
     return {"command": command, "destructive_action_executed": False}
 
 
 @router.post("/{device_id}")
 async def request_wipe(device_id: str, payload: WipePayload, admin: Annotated[dict, Depends(require_admin)]):
+    if device_id not in {"device_a", "device_b", "all"}:
+        raise HTTPException(status_code=404, detail="Device not found")
+    if payload.confirmation_token != WIPE_CONFIRM_TOKEN:
+        raise HTTPException(status_code=400, detail="Confirmation token required")
+    await asyncio.sleep(5)
     with get_db() as db:
         cursor = db.execute(
             """
@@ -112,5 +146,13 @@ async def request_wipe(device_id: str, payload: WipePayload, admin: Annotated[di
         )
         command = row_to_dict(db.execute("SELECT * FROM wipe_commands WHERE id = ?", (cursor.lastrowid,)).fetchone())
 
+    _write_wipe_audit({
+        "type": "device_wipe",
+        "device_id": device_id,
+        "requested_by": admin["device_id"],
+        "reason": payload.reason,
+        "created_at": command["created_at"],
+        "command_id": command["id"],
+    })
     await manager.broadcast({"type": "wipe_command", "device_id": device_id, "command": command, "reason": payload.reason})
     return {"command": command}

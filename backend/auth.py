@@ -1,6 +1,7 @@
 import os
+import base64
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -9,7 +10,9 @@ from pydantic import BaseModel
 
 
 JWT_SECRET = os.getenv("JWT_SECRET", "dev-only-change-me")
-JWT_ALGORITHM = "HS256"
+JWT_PRIVATE_KEY_B64 = os.getenv("JWT_PRIVATE_KEY_B64", "")
+JWT_PUBLIC_KEY_B64 = os.getenv("JWT_PUBLIC_KEY_B64", "")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "RS256")
 JWT_EXPIRE_DAYS = 30
 DEVICE_ROLES = {"device_a": "ADMIN", "device_b": "USER"}
 
@@ -17,8 +20,33 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 security = HTTPBearer(auto_error=False)
 
 
+def _b64decode_text(value: str) -> str:
+    return base64.b64decode(value.encode()).decode() if value else ""
+
+
+def _signing_key() -> str:
+    if JWT_ALGORITHM == "RS256":
+        key = _b64decode_text(JWT_PRIVATE_KEY_B64)
+        if not key:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="JWT private key missing")
+        return key
+    return JWT_SECRET
+
+
+def _verify_key() -> str:
+    if JWT_ALGORITHM == "RS256":
+        key = _b64decode_text(JWT_PUBLIC_KEY_B64)
+        if not key:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="JWT public key missing")
+        return key
+    return JWT_SECRET
+
+
 class DeviceAuthRequest(BaseModel):
-    device_id: str
+    device_id: Literal["device_a", "device_b"]
+
+    class Config:
+        extra = "forbid"
 
 
 class TokenResponse(BaseModel):
@@ -38,7 +66,7 @@ def create_access_token(device_id: str) -> TokenResponse:
     expires_at = datetime.now(timezone.utc) + timedelta(days=JWT_EXPIRE_DAYS)
     token = jwt.encode(
         {"sub": device_id, "role": role, "exp": expires_at},
-        JWT_SECRET,
+        _signing_key(),
         algorithm=JWT_ALGORITHM,
     )
     return TokenResponse(
@@ -52,7 +80,7 @@ def create_access_token(device_id: str) -> TokenResponse:
 
 def decode_token(token: str) -> dict:
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, _verify_key(), algorithms=[JWT_ALGORITHM])
     except JWTError as exc:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
 

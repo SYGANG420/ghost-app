@@ -45,6 +45,10 @@ def _connect() -> sqlite3.Connection:
     conn = module.connect(str(DB_PATH), check_same_thread=False)
     conn.row_factory = _dict_row_factory
     conn.execute(f"PRAGMA key = '{DB_KEY}'")
+    conn.execute("PRAGMA cipher_compatibility = 4")
+    conn.execute("PRAGMA kdf_iter = 256000")
+    conn.execute("PRAGMA cipher_hmac_algorithm = HMAC_SHA512")
+    conn.execute("PRAGMA cipher_kdf_algorithm = PBKDF2_HMAC_SHA512")
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
