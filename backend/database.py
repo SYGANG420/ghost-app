@@ -35,11 +35,15 @@ def parse_dt(value: str | None) -> datetime | None:
         return None
 
 
+def _dict_row_factory(cursor: Any, row: tuple[Any, ...]) -> dict[str, Any]:
+    return {column[0]: row[index] for index, column in enumerate(cursor.description)}
+
+
 def _connect() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     module = sqlcipher3 if sqlcipher3 is not None else sqlite3
     conn = module.connect(str(DB_PATH), check_same_thread=False)
-    conn.row_factory = sqlite3.Row
+    conn.row_factory = _dict_row_factory
     conn.execute(f"PRAGMA key = '{DB_KEY}'")
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
