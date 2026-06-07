@@ -56,6 +56,8 @@ def check_wipe(current: Annotated[dict, Depends(get_current_device)]):
 
 @router.get("/{device_id}/status")
 def get_wipe_status(device_id: str, current: Annotated[dict, Depends(get_current_device)]):
+    if current["device_id"] != device_id and current.get("role") != "ADMIN":
+        raise HTTPException(status_code=403, detail="Device mismatch")
     with get_db() as db:
         rows = rows_to_dicts(
             db.execute(
