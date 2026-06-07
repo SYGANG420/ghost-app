@@ -14,7 +14,8 @@ test('GHOST CONTROL full screen flow', async ({ page }) => {
 
   await expect(page.getByText('端末A ダッシュボード')).toBeVisible({ timeout: 15_000 });
   await page.getByRole('button', { name: 'MAP' }).click();
-  await expect(page.locator('.leaflet-container')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '位置監視' })).toBeVisible();
+  await expect(page.getByText('CartoDB Dark Matter')).toBeVisible();
 
   await page.getByRole('button', { name: 'SALES' }).click();
   await expect(page.getByText(/売上登録/)).toBeVisible();
