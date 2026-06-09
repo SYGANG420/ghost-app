@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import L from 'leaflet';
 import { Copy, Crosshair, Navigation } from 'lucide-react';
+import { listLocations } from '../api/location.js';
 import { useReverseGeocode } from '../hooks/useReverseGeocode.js';
 import { statusJa } from '../utils/format.js';
 
@@ -22,7 +23,14 @@ function normalizeLocation(location) {
   const lat = Number(location?.lat);
   const lon = Number(location?.lon);
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-  return { lat, lon, battery: location.battery ?? null, updatedAt: location.heartbeat_at || location.updated_at || location.updatedAt || new Date().toISOString() };
+  return {
+    lat,
+    lon,
+    battery: location.battery ?? null,
+    online: Boolean(location.online ?? true),
+    websocketOnline: Boolean(location.websocket_online ?? false),
+    updatedAt: location.heartbeat_at || location.updated_at || location.updatedAt || new Date().toISOString(),
+  };
 }
 
 function createMarkerIcon(kind, label) {
@@ -55,6 +63,37 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
   const peerId = selfId === 'A' ? 'B' : 'A';
 
   useEffect(() => setSelected(deviceShortId(deviceId)), [deviceId]);
+
+  useEffect(() => {
+    if (!deviceId) return undefined;
+    let cancelled = false;
+
+    const loadLocations = async () => {
+      try {
+        const payload = await listLocations();
+        if (cancelled) return;
+        const byDevice = Object.fromEntries(
+          (payload.items || [])
+            .map((item) => [item.device_id, normalizeLocation(item)])
+            .filter(([, location]) => Boolean(location))
+        );
+        const selfLocation = byDevice[deviceId];
+        const peerLocation = byDevice[oppositeDevice(deviceId)];
+        console.log('[GHOST MAP] API locations loaded', { selfLocation, peerLocation });
+        if (selfLocation) setGpsPosition((current) => current || selfLocation);
+        if (peerLocation) setPeerPosition(peerLocation);
+      } catch (error) {
+        console.log('[GHOST MAP] API location load failed', error);
+      }
+    };
+
+    loadLocations();
+    const id = window.setInterval(loadLocations, 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [deviceId]);
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -97,7 +136,11 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
   }, [deviceId, sendSocketMessage]);
 
   useEffect(() => {
-    if (!socketMessage || !['location_update', 'device_online'].includes(socketMessage.type)) return;
+    if (!socketMessage || !['location_update', 'device_online', 'device_offline'].includes(socketMessage.type)) return;
+    if (socketMessage.type === 'device_offline' && socketMessage.device_id === oppositeDevice(deviceId)) {
+      setPeerPosition((current) => (current ? { ...current, online: false, websocketOnline: false } : current));
+      return;
+    }
     const nextPosition = normalizeLocation(socketMessage.location);
     if (!nextPosition) {
       console.log('[GHOST MAP] Location message skipped', socketMessage);
@@ -156,7 +199,7 @@ export default function MapPage({ socketState, socketMessage, sendSocketMessage,
 
   const devices = useMemo(() => [
     { id: selfId, label: `${TERMINAL}${selfId}`, status: gpsPosition ? socketState : geoStatus, color: 'accent', position: gpsPosition, address: address || WAITING_ADDRESS, lastSeen: gpsPosition?.updatedAt || '\u672a\u53d6\u5f97' },
-    { id: peerId, label: `${TERMINAL}${peerId}`, status: peerPosition ? 'online' : 'offline', color: 'blue', position: peerPosition, address: peerPosition ? 'WebSocket\u3067\u4f4d\u7f6e\u53d7\u4fe1\u6e08\u307f' : '\u76f8\u624b\u7aef\u672b\u306e\u4f4d\u7f6e\u5f85\u6a5f\u4e2d', lastSeen: peerPosition?.updatedAt || NOT_RECEIVED },
+    { id: peerId, label: `${TERMINAL}${peerId}`, status: peerPosition?.online ? 'online' : 'offline', color: 'blue', position: peerPosition, address: peerPosition ? 'API/WebSocket\u3067\u4f4d\u7f6e\u53d7\u4fe1\u6e08\u307f' : '\u76f8\u624b\u7aef\u672b\u306e\u4f4d\u7f6e\u5f85\u6a5f\u4e2d', lastSeen: peerPosition?.updatedAt || NOT_RECEIVED },
   ], [address, geoStatus, gpsPosition, peerId, peerPosition, selfId, socketState]);
 
   const selectedDevice = devices.find((device) => device.id === selected) || devices[0];
