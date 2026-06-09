@@ -194,15 +194,31 @@ class WebSocketManager:
             if sockets is not None and not sockets:
                 self.active.pop(device_id, None)
 
+    async def _drop_socket(self, websocket: Any) -> None:
+        async with self._lock:
+            empty_devices: list[str] = []
+            for device_id, sockets in self.active.items():
+                sockets.discard(websocket)
+                if not sockets:
+                    empty_devices.append(device_id)
+            for device_id in empty_devices:
+                self.active.pop(device_id, None)
+
     async def send_to_device(self, device_id: str, payload: dict[str, Any]) -> None:
         sockets = list(self.active.get(device_id, set()))
         for websocket in sockets:
-            await websocket.send_text(json.dumps(payload))
+            try:
+                await websocket.send_text(json.dumps(payload))
+            except RuntimeError:
+                await self._drop_socket(websocket)
 
     async def broadcast(self, payload: dict[str, Any]) -> None:
         sockets = [socket for group in self.active.values() for socket in group]
         for websocket in sockets:
-            await websocket.send_text(json.dumps(payload))
+            try:
+                await websocket.send_text(json.dumps(payload))
+            except RuntimeError:
+                await self._drop_socket(websocket)
 
 
 manager = WebSocketManager()
