@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Lock, ServerCrash, ShieldAlert, Trash2 } from 'lucide-react';
+import NativeLocationPanel from '../components/NativeLocationPanel.jsx';
 import WebSocketDiagnostics from '../components/WebSocketDiagnostics.jsx';
 import { getWipeConfirmToken, requestRemoteWipe, requestVpsWipe, updateDeadManSwitch } from '../api/wipe.js';
 
@@ -15,6 +16,7 @@ export default function CtrlPage({
   onExportData,
   onResetLocalData,
   onResetDevice,
+  nativeLocation,
 }) {
   const [deadmanEnabled, setDeadmanEnabled] = useState(false);
   const [deadmanHours, setDeadmanHours] = useState(72);
@@ -105,6 +107,8 @@ export default function CtrlPage({
         onRefreshToken={onRefreshToken}
         socketState={socketState}
       />
+
+      <NativeLocationPanel nativeLocation={nativeLocation} />
 
       <div className="ctrl-grid">
         {wipeActions.map((action) => {

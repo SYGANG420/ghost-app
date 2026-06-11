@@ -9,6 +9,7 @@ import { createSale, deleteSale as deleteSaleApi, listSales, updateSale } from '
 import { createStockItem, deleteStockItem, inventoryAdjust, listStock, listStockHistory, restockItem, updateStockItem } from './api/stock.js';
 import { useDeviceAuth } from './hooks/useDeviceAuth.js';
 import { useGhostSocket } from './hooks/useGhostSocket.js';
+import { useNativeLocationService } from './hooks/useNativeLocationService.js';
 import { useNotification } from './hooks/useNotification.js';
 import { products as seedProducts, sales as seedSales } from './data/mockData.js';
 import { normalizeProduct, normalizeSale, productPayload, salePayload } from './utils/apiMapping.js';
@@ -52,6 +53,7 @@ export default function App() {
   const authCloseRefreshRef = useRef('');
   const auth = useDeviceAuth();
   const socket = useGhostSocket(auth.deviceId, auth.token);
+  const nativeLocation = useNativeLocationService(auth.deviceId, auth.token);
   const monthlyProfit = salesRecords.reduce((sum, item) => sum + item.grossProfit, 0);
   const { notify, NotificationCenter } = useNotification({
     stockItems: unlocked ? products : [],
@@ -338,6 +340,7 @@ export default function App() {
         onResetDevice={auth.resetDevice}
         onRefreshToken={auth.refreshToken}
         onResetLocalData={resetLocalData}
+        nativeLocation={nativeLocation}
         socketDiagnostics={socket.diagnostics}
         socketState={socket.state}
       />
